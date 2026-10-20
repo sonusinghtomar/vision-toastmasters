@@ -1,0 +1,143 @@
+rules_version = '2';
+
+// Roles live in users/{uid}.role:
+//   superadmin  President: everything, including granting admin rights
+//   admin       officers: manage meetings, members, guests, attendance
+//   member      read club data, edit own profile/Pathways, log own speeches and roles
+//   guest       read own guest record and own attendance
+//   pending     signed in, not yet linked to a member or guest record
+// Anonymous sign-in is only used for the guest QR check-in form.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function userPath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasProfile() { return signedIn() && exists(userPath()); }
+    function me() { return get(userPath()).data; }
+    function role() { return hasProfile() ? me().role : 'none'; }
+    function isSuper() { return role() == 'superadmin'; }
+    function isAdmin() { return role() in ['admin', 'superadmin']; }
+    function isMember() { return role() in ['member', 'admin', 'superadmin']; }
+    function myMemberId() { return hasProfile() ? me().get('memberId', '') : ''; }
+    function myGuestId() { return hasProfile() ? me().get('guestId', '') : ''; }
+    function verifiedEmail() {
+      return signedIn() && request.auth.token.get('email', '') != ''
+        && request.auth.token.get('email_verified', false) == true;
+    }
+    // Emails are stored lowercase by the app so list queries can be checked against the token.
+    function myEmail() { return request.auth.token.email; }
+    function changedOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    function checkinOpen(meetingId, code) {
+      let c = get(/databases/$(database)/documents/checkinCodes/$(meetingId)).data;
+      return c.open == true && c.code == code;
+    }
+
+    match /users/{uid} {
+      allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == 'pending'
+        && request.resource.data.get('memberId', '') == ''
+        && request.resource.data.get('guestId', '') == '';
+      allow update: if isSuper()
+        // Officers can approve people as members or guests, never as admins.
+        || (isAdmin() && resource.data.role in ['pending', 'member', 'guest']
+            && request.resource.data.role in ['pending', 'member', 'guest'])
+        // Anyone can edit their own display preferences.
+        || (request.auth.uid == uid && changedOnly(['name', 'photoURL', 'notify', 'lastSeen']))
+        // Self-link: a pending user claims the member/guest record that carries their verified email.
+        || (request.auth.uid == uid && resource.data.role == 'pending' && verifiedEmail()
+            && changedOnly(['role', 'memberId'])
+            && request.resource.data.role == 'member'
+            && get(/databases/$(database)/documents/members/$(request.resource.data.memberId)).data.get('email', '') == myEmail())
+        || (request.auth.uid == uid && resource.data.role == 'pending' && verifiedEmail()
+            && changedOnly(['role', 'guestId'])
+            && request.resource.data.role == 'guest'
+            && get(/databases/$(database)/documents/guests/$(request.resource.data.guestId)).data.get('email', '') == myEmail());
+      allow delete: if isSuper();
+    }
+
+    match /settings/{doc} {
+      allow read: if signedIn();
+      allow write: if isSuper();
+    }
+
+    match /members/{id} {
+      allow read: if isMember()
+        || (verifiedEmail() && resource.data.get('email', '') == myEmail());
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (id == myMemberId() && changedOnly(['phone', 'pathways', 'bio', 'goals', 'updatedAt']));
+    }
+
+    match /guests/{id} {
+      allow read: if isAdmin() || (id == myGuestId() && myGuestId() != '')
+        || (verifiedEmail() && resource.data.get('email', '') == myEmail());
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (id == myGuestId() && myGuestId() != '' && changedOnly(['phone', 'interest', 'updatedAt']));
+    }
+
+    match /meetings/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // QR codes for self check-in. The code is only visible to officers and on the QR itself.
+    match /checkinCodes/{meetingId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /attendance/{id} {
+      allow read: if isMember()
+        || (resource.data.personType == 'guest' && resource.data.personId == myGuestId() && myGuestId() != '');
+      allow create: if isAdmin()
+        // Member self check-in by QR
+        || (isMember() && request.resource.data.personType == 'member'
+            && request.resource.data.personId == myMemberId() && myMemberId() != ''
+            && id == request.resource.data.meetingId + '_' + myMemberId()
+            && request.resource.data.method == 'qr'
+            && checkinOpen(request.resource.data.meetingId, request.resource.data.code));
+      allow update, delete: if isAdmin();
+    }
+
+    // Guest QR check-ins wait here until an officer's app merges them into guests + attendance.
+    match /checkins/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['meetingId', 'code', 'name', 'phone', 'email', 'source',
+             'invitedBy', 'interest', 'firstVisit', 'guestId', 'consent', 'at', 'uid'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 100
+        && request.resource.data.uid == request.auth.uid
+        && checkinOpen(request.resource.data.meetingId, request.resource.data.code);
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Speech log and role log: officers manage all, members manage their own entries.
+    match /speeches/{id} {
+      allow read: if isMember();
+      allow create: if isAdmin() || (isMember() && request.resource.data.memberId == myMemberId());
+      allow update: if isAdmin()
+        || (isMember() && resource.data.memberId == myMemberId() && request.resource.data.memberId == myMemberId());
+      allow delete: if isAdmin() || (isMember() && resource.data.memberId == myMemberId());
+    }
+    match /roleLog/{id} {
+      allow read: if isMember();
+      allow create: if isAdmin() || (isMember() && request.resource.data.personId == myMemberId());
+      allow update: if isAdmin()
+        || (isMember() && resource.data.personId == myMemberId() && request.resource.data.personId == myMemberId());
+      allow delete: if isAdmin() || (isMember() && resource.data.personId == myMemberId());
+    }
+
+    // Education awards (Pathways levels, path completions) and DCP tracking.
+    match /eduAwards/{id} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+    match /dcp/{year} {
+      allow read: if isMember();
+      allow write: if isAdmin();
+    }
+  }
+}
