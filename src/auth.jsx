@@ -21,7 +21,11 @@ export function AuthProvider({ children }) {
     if (!user || user.isAnonymous) return
     const r = doc(db, 'users', user.uid)
     let created = false
-    return onSnapshot(r, async (snap) => {
+    let linking = false
+    // Only act on the server-confirmed profile: the security rules read this document,
+    // so switching to member/guest screens before the server has it gets their data refused.
+    return onSnapshot(r, { includeMetadataChanges: true }, async (snap) => {
+      if (snap.metadata.hasPendingWrites) return
       if (!snap.exists()) {
         if (created) return
         created = true
@@ -34,7 +38,10 @@ export function AuthProvider({ children }) {
       }
       const p = { id: snap.id, ...snap.data() }
       setProfile(p)
-      if (p.role === 'pending') autoLink(user, p).catch(console.error)
+      if (p.role === 'pending' && !linking) {
+        linking = true
+        autoLink(user, p).catch(console.error).finally(() => { linking = false })
+      }
     }, (e) => { console.error(e); setProfile({ role: 'pending', error: e.message }) })
   }, [user])
 
@@ -55,6 +62,9 @@ export function AuthProvider({ children }) {
 // If a member or guest record already carries this person's verified email, link it automatically.
 async function autoLink(user, profile) {
   if (!user.email || !user.emailVerified) return
+  // The security rules read email_verified from the sign-in token, which can still say
+  // "not verified" for up to an hour after the person clicks the link. Refresh it first.
+  await user.getIdToken(true)
   const email = normEmail(user.email)
   const m = await getDocs(query(collection(db, 'members'), where('email', '==', email))).catch(() => null)
   if (m && !m.empty) {

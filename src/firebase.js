@@ -14,6 +14,8 @@ export const auth = app ? getAuth(app) : null
 export const db = app
   ? initializeFirestore(app, {
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      // Skip empty (undefined) fields instead of failing the whole save.
+      ignoreUndefinedProperties: true,
     })
   : null
 

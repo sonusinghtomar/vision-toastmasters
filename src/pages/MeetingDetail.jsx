@@ -44,11 +44,11 @@ export default function MeetingDetail() {
       </div>
       <Tabs tabs={tabs} value={tab} onChange={(t) => setParams({ tab: t })} />
       {tab === 'agenda' && (isAdmin
-        ? <AgendaEditor meeting={meeting} members={active} guests={sortedGuests} />
+        ? <AgendaEditor key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />
         : <AgendaView meeting={meeting} />)}
-      {tab === 'attendance' && isAdmin && <Attendance meeting={meeting} members={active} guests={sortedGuests} />}
-      {tab === 'qr' && isAdmin && <QrPanel meeting={meeting} />}
-      {tab === 'awards' && <Awards meeting={meeting} members={active} guests={sortedGuests} editable={isAdmin} />}
+      {tab === 'attendance' && isAdmin && <Attendance key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />}
+      {tab === 'qr' && isAdmin && <QrPanel key={meeting.id} meeting={meeting} />}
+      {tab === 'awards' && <Awards key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} editable={isAdmin} />}
       {tab === 'share' && <Share meeting={meeting} />}
     </>
   )

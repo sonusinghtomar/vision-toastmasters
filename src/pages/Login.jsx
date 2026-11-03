@@ -5,6 +5,13 @@ const ICON_URL = `${import.meta.env.BASE_URL}icon-192.png`
 
 const friendly = (e) => ({
   'auth/invalid-credential': 'Email or password is incorrect.',
+  'auth/invalid-login-credentials': 'Email or password is incorrect.',
+  'auth/wrong-password': 'Email or password is incorrect.',
+  'auth/user-not-found': 'No account with this email. Create one below.',
+  'auth/too-many-requests': 'Too many attempts. Please wait a few minutes and try again.',
+  'auth/network-request-failed': 'No internet connection. Please try again when online.',
+  'auth/unauthorized-domain': 'Sign-in is not allowed on this web address yet (Firebase authorized domains).',
+  'auth/popup-blocked': 'Your browser blocked the sign-in window. Allow pop-ups and try again.',
   'auth/email-already-in-use': 'An account with this email exists. Sign in instead.',
   'auth/weak-password': 'Use at least 6 characters for the password.',
   'auth/popup-closed-by-user': 'Sign-in was cancelled.',

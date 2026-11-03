@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { HashRouter, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
+import { HashRouter, Routes, Route, NavLink, Navigate, useLocation, useParams } from 'react-router-dom'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { isConfigured } from './config'
 import { AuthProvider, useAuth, logout } from './auth'
@@ -57,11 +57,11 @@ function Shell() {
         <Route path="/" element={<Home />} />
         <Route path="/meetings" element={<Meetings />} />
         <Route path="/meetings/import" element={officer(<AgendaImport />)} />
-        <Route path="/meetings/:id" element={<MeetingDetail />} />
+        <Route path="/meetings/:id" element={<PerRecord page={MeetingDetail} />} />
         <Route path="/members" element={member(<Members />)} />
-        <Route path="/members/:id" element={member(<MemberDetail />)} />
+        <Route path="/members/:id" element={member(<PerRecord page={MemberDetail} />)} />
         <Route path="/guests" element={officer(<Guests />)} />
-        <Route path="/guests/:id" element={<GuestDetail />} />
+        <Route path="/guests/:id" element={<PerRecord page={GuestDetail} />} />
         <Route path="/log" element={member(<VoiceLog />)} />
         <Route path="/reports" element={member(<Reports />)} />
         <Route path="/dcp" element={member(<Dcp />)} />
@@ -73,6 +73,13 @@ function Shell() {
       </Suspense>
     </Frame>
   )
+}
+
+// Remount a detail page when its record changes, so forms never carry one
+// member's, guest's or meeting's values over to the next.
+function PerRecord({ page: Page }) {
+  const { id } = useParams()
+  return <Page key={id} />
 }
 
 function Frame({ children, nav = false }) {

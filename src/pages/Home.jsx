@@ -25,7 +25,7 @@ function Pending() {
           Please verify your email ({user.email}) using the link we sent you.
           <div className="row" style={{ marginTop: '.5rem' }}>
             <button className="small" disabled={sent} onClick={() => resendVerification().then(() => setSent(true))}>{sent ? 'Sent' : 'Resend email'}</button>
-            <button className="small" onClick={() => reload(user).then(() => window.location.reload())}>I have verified</button>
+            <button className="small" onClick={() => reload(user).then(() => user.getIdToken(true)).then(() => window.location.reload())}>I have verified</button>
           </div>
         </div>
       )}

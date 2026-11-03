@@ -33,6 +33,8 @@ export function useDoc(name, id) {
   const [state, setState] = useState({ data: null, loading: true, error: null })
   useEffect(() => {
     if (!id) { setState({ data: null, loading: false, error: null }); return }
+    // Never show (or let anyone edit) the previous record while the new one loads.
+    setState({ data: null, loading: true, error: null })
     return onSnapshot(
       ref(name, id),
       (snap) => setState({ data: snap.exists() ? withId(snap) : null, loading: false, error: null }),

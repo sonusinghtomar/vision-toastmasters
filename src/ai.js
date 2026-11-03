@@ -101,8 +101,8 @@ const actionSchema = Schema.object({
           type: Schema.enumString({ enum: ['attendance', 'speech', 'role', 'award', 'guest', 'evaluation', 'note'] }),
           person: Schema.string({ description: 'Person the action is about' }),
           personType: Schema.enumString({ enum: ['member', 'guest'] }),
-          role: Schema.enumString({ enum: ROLE_KEYS }),
-          award: Schema.enumString({ enum: MEETING_AWARDS.map((a) => a.key) }),
+          role: Schema.enumString({ enum: [...ROLE_KEYS, 'none'] }),
+          award: Schema.enumString({ enum: [...MEETING_AWARDS.map((a) => a.key), 'none'] }),
           title: Schema.string(),
           path: Schema.string(),
           level: Schema.string(),
@@ -114,8 +114,6 @@ const actionSchema = Schema.object({
           source: Schema.string({ description: 'How a guest heard about the club' }),
           text: Schema.string({ description: 'Notes, evaluation comments or free text' }),
         },
-        optionalProperties: ['personType', 'role', 'award', 'title', 'path', 'level', 'project',
-          'actualTime', 'evaluator', 'phone', 'email', 'source', 'text'],
       }),
     }),
     transcript: Schema.string({ description: 'What was said, cleaned up' }),
@@ -127,12 +125,14 @@ export async function parseNote({ audio, text, context }) {
 Action types:
 - attendance: person was present (personType member or guest).
 - speech: a prepared speech (person = speaker; include title, path, level, project, actualTime, evaluator when said).
+  Pathways project names such as Ice Breaker, Evaluation and Feedback or Researching and Presenting go in project; the speech's own name goes in title.
 - role: person took a meeting role. Role keys: ${roleList}.
 - award: meeting award won. Award keys: ${MEETING_AWARDS.map((a) => `${a.key} = ${a.label}`).join('; ')}.
 - guest: a new guest's details (person, phone, email, source, text).
 - evaluation: evaluation feedback about a speaker (person = speaker, evaluator, text).
 - note: anything else.
-Include every detail that was said (title, project, level, time, evaluator, phone, email, comments) in its field.
+Fill every field of every action: put each detail that was said (title, project, level, time, evaluator, phone, email, comments) in its field, use an empty string for details not mentioned, and "none" for role/award when they do not apply.
+Do not add an empty note action.
 Use names exactly as in the known lists when they clearly match.
 Known members: ${context.members.join(', ') || 'none'}.
 Known guests: ${context.guests.join(', ') || 'none'}.
@@ -141,5 +141,9 @@ ${context.self ? `The speaker of this note is ${context.self}; "I" or "my" means
   const parts = [prompt]
   if (audio) parts.push({ inlineData: { data: await fileToBase64(audio), mimeType: audio.type.split(';')[0] || 'audio/webm' } })
   if (text) parts.push(`Note: ${text}`)
-  return generate(actionSchema, parts)
+  const r = await generate(actionSchema, parts)
+  const actions = (r.actions || [])
+    .map((a) => Object.fromEntries(Object.entries(a).filter(([, v]) => v !== '' && v !== 'none' && v != null)))
+    .filter((a) => a.type !== 'note' || a.text)
+  return { ...r, actions }
 }

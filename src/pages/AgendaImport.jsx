@@ -67,7 +67,7 @@ export default function AgendaImport() {
       slots: d.slots.map((s) => ({
         ...s,
         person: s.person?.unmatched && s.person.name === name ? person : s.person,
-        evaluator: s.evaluator?.unmatched && s.evaluator.name === name ? person : s.evaluator,
+        ...('evaluator' in s ? { evaluator: s.evaluator?.unmatched && s.evaluator.name === name ? person : s.evaluator } : {}),
       })),
     }))
   }
