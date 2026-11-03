@@ -1,31 +1,32 @@
 import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from 'firebase/ai'
 import { app } from './firebase'
-import { GEMINI_MODEL } from './config'
+import { GEMINI_MODEL, GEMINI_FALLBACK_MODEL } from './config'
 import { ROLES, ROLE_KEYS, MEETING_AWARDS } from './constants'
 
 let ai
-function model(responseSchema) {
+function model(responseSchema, name = GEMINI_MODEL) {
   ai ||= getAI(app, { backend: new GoogleAIBackend() })
   return getGenerativeModel(ai, {
-    model: GEMINI_MODEL,
+    model: name,
     generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0.1 },
   })
 }
 
-// The free tier allows a few requests per minute and Google is sometimes busy,
-// so retry those cases a few times before giving up with a clear message.
+// The free tier allows a few requests per minute and Google is sometimes busy.
+// Alternate between the main and fallback models, waiting a little longer each round,
+// before giving up with a clear message.
 async function generate(schema, parts) {
-  const waits = [4000, 12000, 30000]
+  const waits = [0, 3000, 10000, 25000]
   for (let attempt = 0; ; attempt++) {
     try {
-      const res = await model(schema).generateContent(parts)
+      const res = await model(schema, attempt % 2 ? GEMINI_FALLBACK_MODEL : GEMINI_MODEL).generateContent(parts)
       return JSON.parse(res.response.text())
     } catch (e) {
       const msg = String(e?.message || e)
       const busy = /high demand|overloaded|unavailable|503/i.test(msg)
       const quota = /quota|rate.?limit|429|resource.?exhausted/i.test(msg)
-      if ((busy || quota) && attempt < waits.length) {
-        await new Promise((r) => setTimeout(r, waits[attempt]))
+      if ((busy || quota) && attempt + 1 < waits.length) {
+        await new Promise((r) => setTimeout(r, waits[attempt + 1]))
         continue
       }
       if (quota) throw new Error('Gemini free limit reached (a few requests per minute). Please wait a minute and try again.')
@@ -49,7 +50,7 @@ const roleList = ROLES.map((r) => `${r.key} = ${r.label}`).join('; ')
 // ── Agenda (PDF or photo) → meeting ────────────────────────
 const agendaSchema = Schema.object({
   properties: {
-    number: Schema.integer({ description: 'Meeting number, e.g. 484' }),
+    number: Schema.integer({ description: 'Meeting number, e.g. 484. 0 if not printed.' }),
     theme: Schema.string(),
     date: Schema.string({ description: 'Meeting date as YYYY-MM-DD' }),
     startTime: Schema.string({ description: 'HH:MM 24h' }),
@@ -68,14 +69,12 @@ const agendaSchema = Schema.object({
           level: Schema.string({ description: 'Pathways level if printed, e.g. "Level 2"' }),
           evaluator: Schema.string({ description: 'For prepared speakers: the evaluator name' }),
         },
-        optionalProperties: ['person', 'time', 'duration', 'title', 'project', 'path', 'level', 'evaluator'],
       }),
     }),
     officers: Schema.array({
       items: Schema.object({ properties: { title: Schema.string(), name: Schema.string() } }),
     }),
   },
-  optionalProperties: ['number', 'theme', 'date', 'startTime', 'endTime', 'venue', 'officers'],
 })
 
 export async function parseAgenda(file) {
@@ -88,7 +87,8 @@ Rules:
 - Grammarian with WOD/IOD = grammarian. Ballot counter = ballot. Photographer = photo.
 - If a role says "To Be Assigned", keep the slot with an empty person.
 - Strip prefixes like TM, DTM from names. Use the time printed for each section.
-- Officers are the club officer list (President, VP Education, etc.) if printed.`
+- Officers are the club officer list (President, VP Education, etc.) if printed.
+- Fill every field. Use an empty string for anything not printed (and 0 for a missing meeting number).`
   return generate(agendaSchema, [prompt, { inlineData: { data, mimeType: file.type || 'application/pdf' } }])
 }
 
@@ -114,7 +114,7 @@ const actionSchema = Schema.object({
           source: Schema.string({ description: 'How a guest heard about the club' }),
           text: Schema.string({ description: 'Notes, evaluation comments or free text' }),
         },
-        optionalProperties: ['person', 'personType', 'role', 'award', 'title', 'path', 'level', 'project',
+        optionalProperties: ['personType', 'role', 'award', 'title', 'path', 'level', 'project',
           'actualTime', 'evaluator', 'phone', 'email', 'source', 'text'],
       }),
     }),
@@ -132,6 +132,7 @@ Action types:
 - guest: a new guest's details (person, phone, email, source, text).
 - evaluation: evaluation feedback about a speaker (person = speaker, evaluator, text).
 - note: anything else.
+Include every detail that was said (title, project, level, time, evaluator, phone, email, comments) in its field.
 Use names exactly as in the known lists when they clearly match.
 Known members: ${context.members.join(', ') || 'none'}.
 Known guests: ${context.guests.join(', ') || 'none'}.

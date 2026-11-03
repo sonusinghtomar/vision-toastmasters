@@ -31,10 +31,10 @@ export default function AgendaImport() {
         const m = matchPerson(n, rawMembers)
         return m ? { type: 'member', id: m.id, name: m.name } : { type: 'other', id: '', name: n, unmatched: true }
       }
-      const existing = meetings.find((m) => (r.number && m.number === r.number) || (r.date && m.date === r.date))
+      const existing = meetings.find((m) => (r.number > 0 && m.number === r.number) || (r.date && m.date === r.date))
       setDraft({
         existingId: existing?.id || '',
-        number: r.number || null, theme: r.theme || '', date: r.date || today(),
+        number: r.number > 0 ? r.number : null, theme: r.theme || '', date: r.date || today(),
         startTime: r.startTime || club.startTime, endTime: r.endTime || club.endTime, venue: r.venue || club.venue,
         officers: r.officers || [],
         slots: (r.slots || []).map((s) => ({

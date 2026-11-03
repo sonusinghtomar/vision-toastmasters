@@ -16,6 +16,8 @@ export const firebaseConfig = {
 //    "gemini-flash-latest" always points to Google's current Flash model,
 //    so it keeps working when older models are retired.
 export const GEMINI_MODEL = 'gemini-flash-latest'
+// Used automatically when the main model is busy or its free quota is used up.
+export const GEMINI_FALLBACK_MODEL = 'gemini-flash-lite-latest'
 
 // `npm run emulators` + `npm run dev:local` runs everything on your computer with fake data.
 export const useEmulators = import.meta.env.VITE_EMULATORS === '1'
