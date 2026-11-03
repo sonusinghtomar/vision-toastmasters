@@ -46,8 +46,7 @@ export default function AgendaImport() {
         })),
       })
     } catch (e) {
-      setError(e.message?.includes('API') || e.code
-        ? { message: `Could not read the agenda: ${e.message}. Check that Firebase AI Logic is enabled (docs/SETUP.md).` } : e)
+      setError({ message: `Could not read the agenda: ${e.message}` })
     }
     setBusy(false)
   }

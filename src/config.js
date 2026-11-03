@@ -13,8 +13,9 @@ export const firebaseConfig = {
 }
 
 // 2. Gemini model used for agenda reading and voice logging.
-//    If Google retires this model, change it to a current "flash" model.
-export const GEMINI_MODEL = 'gemini-2.5-flash'
+//    "gemini-flash-latest" always points to Google's current Flash model,
+//    so it keeps working when older models are retired.
+export const GEMINI_MODEL = 'gemini-flash-latest'
 
 // `npm run emulators` + `npm run dev:local` runs everything on your computer with fake data.
 export const useEmulators = import.meta.env.VITE_EMULATORS === '1'

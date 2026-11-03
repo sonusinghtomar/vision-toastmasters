@@ -12,6 +12,29 @@ function model(responseSchema) {
   })
 }
 
+// The free tier allows a few requests per minute and Google is sometimes busy,
+// so retry those cases a few times before giving up with a clear message.
+async function generate(schema, parts) {
+  const waits = [4000, 12000, 30000]
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await model(schema).generateContent(parts)
+      return JSON.parse(res.response.text())
+    } catch (e) {
+      const msg = String(e?.message || e)
+      const busy = /high demand|overloaded|unavailable|503/i.test(msg)
+      const quota = /quota|rate.?limit|429|resource.?exhausted/i.test(msg)
+      if ((busy || quota) && attempt < waits.length) {
+        await new Promise((r) => setTimeout(r, waits[attempt]))
+        continue
+      }
+      if (quota) throw new Error('Gemini free limit reached (a few requests per minute). Please wait a minute and try again.')
+      if (busy) throw new Error('Gemini is busy right now. Please try again in a few minutes.')
+      throw e
+    }
+  }
+}
+
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const r = new FileReader()
@@ -66,8 +89,7 @@ Rules:
 - If a role says "To Be Assigned", keep the slot with an empty person.
 - Strip prefixes like TM, DTM from names. Use the time printed for each section.
 - Officers are the club officer list (President, VP Education, etc.) if printed.`
-  const res = await model(agendaSchema).generateContent([prompt, { inlineData: { data, mimeType: file.type || 'application/pdf' } }])
-  return JSON.parse(res.response.text())
+  return generate(agendaSchema, [prompt, { inlineData: { data, mimeType: file.type || 'application/pdf' } }])
 }
 
 // ── Voice note or typed note → actions ─────────────────────
@@ -118,6 +140,5 @@ ${context.self ? `The speaker of this note is ${context.self}; "I" or "my" means
   const parts = [prompt]
   if (audio) parts.push({ inlineData: { data: await fileToBase64(audio), mimeType: audio.type.split(';')[0] || 'audio/webm' } })
   if (text) parts.push(`Note: ${text}`)
-  const res = await model(actionSchema).generateContent(parts)
-  return JSON.parse(res.response.text())
+  return generate(actionSchema, parts)
 }
