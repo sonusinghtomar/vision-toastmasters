@@ -2,7 +2,7 @@
 
 A Progressive Web App for **Vision Toastmasters Club** (Club 991226, Area 02, Division F, District 126, Hyderabad). It tracks meeting attendance, guests, speeches, meeting roles, Pathways progress, awards and the Distinguished Club Program.
 
-**Live app:** https://sonusinghtomar.github.io/vision-toastmasters/ · **First-time setup:** [docs/SETUP.md](docs/SETUP.md)
+**Live app:** https://vision-toastmasters.web.app · **First-time setup:** [docs/SETUP.md](docs/SETUP.md)
 
 Install it on a phone from the browser ("Add to Home screen"). It keeps working offline and syncs when back online.
 
@@ -34,7 +34,7 @@ The rules are enforced server-side in [`firestore.rules`](firestore.rules) and c
 
 ## Tech
 
-React and Vite, `vite-plugin-pwa`, and Firebase (Auth, Firestore with offline cache, AI Logic with Gemini). It is hosted on GitHub Pages and deployed by GitHub Actions on every push to `main`.
+React and Vite, `vite-plugin-pwa`, and Firebase (Auth, Firestore with offline cache, AI Logic with Gemini). It is hosted on Firebase Hosting and deployed by GitHub Actions on every push to `main`. The old GitHub Pages address forwards to it.
 
 ```
 src/

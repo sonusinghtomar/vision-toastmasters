@@ -42,11 +42,23 @@ Whenever `firestore.rules` changes in the repo, publish it again the same way.
 
 The model name is set in `src/config.js` (`GEMINI_MODEL`). If Google retires that model, change it to the current "flash" model.
 
-## 6. Publish on GitHub Pages
+## 6. Publish the app on Firebase Hosting
 
-In the GitHub repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-Every push to `main` now rebuilds the app. The first deploy takes about two minutes.
-The app is then live at **https://sonusinghtomar.github.io/vision-toastmasters/**.
+The app lives at **https://vision-toastmasters.web.app**. GitHub deploys it on every push to `main`, using a key that may only publish the website.
+
+1. Open <https://console.cloud.google.com/iam-admin/serviceaccounts?project=vision-toastmasters> (sign in with the Google account that owns the Firebase project).
+2. Click **+ Create service account**. Name: `github-deploy`. Click **Create and continue**.
+3. Add these roles (type each name in the role box), then click **Done**:
+   - **Firebase Hosting Admin**
+   - **API Keys Viewer**
+   - **Cloud Run Viewer**
+4. Click the new `github-deploy` account → **Keys** tab → **Add key → Create new key → JSON → Create**. A `.json` file downloads.
+5. In GitHub, open the repo → **Settings → Secrets and variables → Actions → New repository secret**.
+   Name: `FIREBASE_SERVICE_ACCOUNT`. Value: open the downloaded file in a text editor, copy **everything**, and paste it. Click **Add secret**.
+6. Delete the downloaded file from your computer. Never share it in chat or email.
+7. In GitHub, go to **Actions → Deploy → Run workflow**. In about two minutes the app is live.
+
+The old address, `sonusinghtomar.github.io/vision-toastmasters`, forwards to the new one (QR links included) once the app has deployed. In **Settings → Pages**, the source stays **GitHub Actions**.
 
 ## 7. Make yourself President (super-admin)
 

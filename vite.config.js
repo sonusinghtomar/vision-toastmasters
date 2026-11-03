@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// GitHub Pages serves the app from /<repo-name>/
-const base = process.env.BASE_PATH || '/vision-toastmasters/'
+// The app is served from the site root on Firebase Hosting (vision-toastmasters.web.app)
+const base = process.env.BASE_PATH || '/'
 
 export default defineConfig({
   base,
