@@ -4,12 +4,12 @@
 //    project. Security comes from firestore.rules.
 // ─────────────────────────────────────────────────────────────
 export const firebaseConfig = {
-  apiKey: 'PASTE_API_KEY',
-  authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
-  projectId: 'PASTE_PROJECT_ID',
-  storageBucket: 'PASTE_PROJECT_ID.firebasestorage.app',
-  messagingSenderId: 'PASTE_SENDER_ID',
-  appId: 'PASTE_APP_ID',
+  apiKey: 'AIzaSyD8m2S2Ecax94MYK-BNHaNO_-2a3ywtT-o',
+  authDomain: 'vision-toastmasters.firebaseapp.com',
+  projectId: 'vision-toastmasters',
+  storageBucket: 'vision-toastmasters.firebasestorage.app',
+  messagingSenderId: '1070111425996',
+  appId: '1:1070111425996:web:bb7435b6f866169a3d8969',
 }
 
 // 2. Gemini model used for agenda reading and voice logging.
