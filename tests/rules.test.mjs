@@ -93,6 +93,28 @@ await t('member cannot edit meeting', assertFails(updateDoc(doc(mem, 'meetings/m
 await t('officer cannot change club settings', assertFails(setDoc(doc(off, 'settings/club'), { name: 'x' })))
 await t('president changes club settings', assertSucceeds(setDoc(doc(pres, 'settings/club'), { name: 'x' })))
 
+// permanent printed poster (club code, valid only in the meeting's check-in window)
+const hr = 3600 * 1000
+await env.withSecurityRulesDisabled(async (c) => {
+  const d = c.firestore()
+  await setDoc(doc(d, 'checkinCodes/_club'), { code: 'club1', enabled: true })
+  await setDoc(doc(d, 'meetings/now'), { date: 'x', checkinStart: new Date(Date.now() - hr), checkinEnd: new Date(Date.now() + hr) })
+  await setDoc(doc(d, 'meetings/later'), { date: 'y', checkinStart: new Date(Date.now() + 24 * hr), checkinEnd: new Date(Date.now() + 26 * hr) })
+  await setDoc(doc(d, 'meetings/nowindow'), { date: 'z' })
+})
+await t('poster: guest checks in during the meeting window', assertSucceeds(ci(anon, 'now', 'club1', 'anon')))
+await t('poster: rejected outside the window (another day)', assertFails(ci(anon, 'later', 'club1', 'anon')))
+await t('poster: rejected for a meeting without a window', assertFails(ci(anon, 'nowindow', 'club1', 'anon')))
+await t('poster: wrong club code rejected', assertFails(ci(anon, 'now', 'nope', 'anon')))
+await t('poster: cannot use the club doc as a meeting', assertFails(ci(anon, '_club', 'club1', 'anon')))
+await t('poster: member self check-in in window', assertSucceeds(setDoc(doc(mem, 'attendance/now_m1'), { meetingId: 'now', personType: 'member', personId: 'm1', method: 'qr', code: 'club1' })))
+await t('poster: member cannot read the club code', assertFails(getDoc(doc(mem, 'checkinCodes/_club'))))
+await t('poster: officer can read the club code', assertSucceeds(getDoc(doc(off, 'checkinCodes/_club'))))
+await t('poster: member cannot set a meeting window', assertFails(updateDoc(doc(mem, 'meetings/later'), { checkinStart: new Date() })))
+await env.withSecurityRulesDisabled((c) => updateDoc(doc(c.firestore(), 'checkinCodes/_club'), { enabled: false }))
+await t('poster: switched off → rejected', assertFails(ci(anon, 'now', 'club1', 'anon')))
+await t('per-meeting QR still works', assertSucceeds(ci(anon, 'mt', 'abc', 'anon')))
+
 console.log(`\n${pass} passed, ${fail} failed`)
 await env.cleanup()
 process.exit(fail ? 1 : 0)

@@ -342,6 +342,7 @@ function QrPanel({ meeting }) {
       {!codeDoc?.open ? (
         <>
           <p>Open check-in to show a QR code. Members and guests scan it with their phone camera to mark themselves present.</p>
+          <p className="muted">Or print the <Link to="/poster">permanent check-in poster</Link> once: it works at every meeting without opening anything.</p>
           <button className="primary" onClick={open}>Open check-in</button>
         </>
       ) : (

@@ -28,7 +28,8 @@ const GUIDES = {
       'Open the meeting → Share → Send on WhatsApp to post the role list to the club group.',
     ]],
     ['At the meeting', [
-      'Open the meeting → QR check-in → Open check-in. Tap the QR code to show it full screen.',
+      'Easiest: print the permanent poster once (More → Check-in poster) and keep it at the venue. It works at every meeting, from an hour before until an hour after.',
+      'Or open the meeting → QR check-in → Open check-in, and tap the QR code to show it full screen. Any ExCom officer can show the same code.',
       'Members scan and tap "Check me in". Guests scan and fill a short form, no account needed.',
       'On the Attendance tab, tick anyone who did not scan, or tap "Mark all role-holders present".',
       'Close check-in when the meeting ends so the code stops working.',
@@ -74,7 +75,7 @@ const GUIDES = {
   ],
   guests: [
     ['Checking in', [
-      'At the meeting, scan the QR code shown by the Sergeant at Arms with your phone camera.',
+      'At the meeting, scan the check-in QR code (on the poster or an officer\'s phone) with your phone camera.',
       'Tap "I am a guest", fill in your name and contact details, and tap Check in. No account or app needed.',
     ]],
     ['Seeing your visits', [

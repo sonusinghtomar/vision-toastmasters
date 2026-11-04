@@ -12,6 +12,7 @@ export default function More() {
     isAdmin && ['/guests', '🙋 Guests and follow-up'],
     ['/meetings', '📅 Meetings'],
     isAdmin && ['/meetings/import', '📄 Import agenda (PDF or photo)'],
+    isAdmin && ['/poster', '🖨️ Check-in poster (permanent QR)'],
     isMember && ['/log', '🎙️ Voice log'],
     isMember && ['/reports', '📊 Reports and Excel export'],
     isMember && ['/dcp', '🏅 DCP progress'],

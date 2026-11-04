@@ -19,6 +19,7 @@ import Admin from './pages/Admin'
 import Settings from './pages/Settings'
 import More from './pages/More'
 import About from './pages/About'
+import Poster from './pages/Poster'
 
 // Pages that pull in Gemini or the Excel writer load on demand.
 const AgendaImport = lazy(() => import('./pages/AgendaImport'))
@@ -69,6 +70,7 @@ function Shell() {
         <Route path="/reports" element={member(<Reports />)} />
         <Route path="/dcp" element={member(<Dcp />)} />
         <Route path="/admin" element={officer(<Admin />)} />
+        <Route path="/poster" element={officer(<Poster />)} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/more" element={<More />} />
         <Route path="/about" element={<About />} />

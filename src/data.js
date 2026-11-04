@@ -54,6 +54,16 @@ export const byDateDesc = (a, b) => (b.date || '').localeCompare(a.date || '')
 
 // ── Dates ──────────────────────────────────────────────────
 export const today = () => new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+// The club meets in India; the permanent check-in poster works on the meeting date in IST.
+export const todayIST = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' })
+
+// Permanent-poster check-in is accepted from 1 hour before the start to 1 hour after the end.
+export const CHECKIN_MARGIN_MIN = 60
+export function checkinWindow(date, startTime = '09:45', endTime = '12:45') {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return {}
+  const at = (t, deltaMin) => new Date(new Date(`${date}T${t || '00:00'}:00+05:30`).getTime() + deltaMin * 60000)
+  return { checkinStart: at(startTime, -CHECKIN_MARGIN_MIN), checkinEnd: at(endTime, CHECKIN_MARGIN_MIN) }
+}
 export function fmtDate(iso, opts = { day: 'numeric', month: 'short', year: 'numeric' }) {
   if (!iso) return ''
   const d = new Date(iso + 'T00:00:00')
@@ -107,7 +117,7 @@ export async function saveMeeting(meeting) {
   const meetingRef = id ? ref('meetings', id) : doc(col('meetings'))
   const mid = meetingRef.id
   const batch = writeBatch(db)
-  batch.set(meetingRef, { ...data, updatedAt: serverTimestamp() }, { merge: true })
+  batch.set(meetingRef, { ...data, ...checkinWindow(data.date, data.startTime, data.endTime), updatedAt: serverTimestamp() }, { merge: true })
 
   const [oldSpeeches, oldRoles] = await Promise.all([
     getDocs(query(col('speeches'), where('meetingId', '==', mid))),

@@ -33,6 +33,15 @@ service cloud.firestore {
       let c = get(/databases/$(database)/documents/checkinCodes/$(meetingId)).data;
       return c.open == true && c.code == code;
     }
+    // The permanent printed poster: one club code (checkinCodes/_club), valid only
+    // within the meeting's check-in window (set by the app when the meeting is saved).
+    function clubPoster(meetingId, code) {
+      let c = get(/databases/$(database)/documents/checkinCodes/_club).data;
+      let m = get(/databases/$(database)/documents/meetings/$(meetingId)).data;
+      return c.enabled == true && c.code == code
+        && request.time >= m.checkinStart && request.time <= m.checkinEnd;
+    }
+    function validCode(meetingId, code) { return checkinOpen(meetingId, code) || clubPoster(meetingId, code); }
 
     match /users/{uid} {
       allow read: if (signedIn() && request.auth.uid == uid) || isAdmin();
@@ -98,7 +107,7 @@ service cloud.firestore {
             && request.resource.data.personId == myMemberId() && myMemberId() != ''
             && id == request.resource.data.meetingId + '_' + myMemberId()
             && request.resource.data.method == 'qr'
-            && checkinOpen(request.resource.data.meetingId, request.resource.data.code));
+            && validCode(request.resource.data.meetingId, request.resource.data.code));
       allow update, delete: if isAdmin();
     }
 
@@ -110,7 +119,7 @@ service cloud.firestore {
         && request.resource.data.name is string && request.resource.data.name.size() > 0
         && request.resource.data.name.size() < 100
         && request.resource.data.uid == request.auth.uid
-        && checkinOpen(request.resource.data.meetingId, request.resource.data.code);
+        && validCode(request.resource.data.meetingId, request.resource.data.code);
       allow read, update, delete: if isAdmin();
     }
 

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useLocation, Link } from 'react-router-dom'
-import { addDoc, getDoc } from 'firebase/firestore'
+import { addDoc, getDoc, getDocs } from 'firebase/firestore'
 import { useAuth, anonymousSignIn, googleSignIn } from '../auth'
-import { col, ref, fmtDate, markAttendanceSelf, normEmail, serverTimestamp } from '../data'
+import { col, ref, query, where, fmtDate, markAttendanceSelf, normEmail, serverTimestamp, todayIST } from '../data'
 import { GUEST_SOURCES } from '../constants'
 import { Loading, ErrorNote } from '../components/ui'
 
-// Opened by scanning the meeting QR code: #/checkin/<meetingId>?c=<code>
+// Opened by scanning a QR code: #/checkin/<meetingId>?c=<code> for one meeting, or
+// #/checkin/today?c=<club code> from the permanent poster, which finds today's meeting.
 export default function CheckIn() {
   const { meetingId } = useParams()
   const code = new URLSearchParams(useLocation().search).get('c') || ''
@@ -23,6 +24,13 @@ export default function CheckIn() {
   }, [user])
   useEffect(() => {
     if (!user) return
+    if (meetingId === 'today') {
+      getDocs(query(col('meetings'), where('date', '==', todayIST()))).then((s) => {
+        const list = s.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
+        setMeeting(list[0] || 'none')
+      }).catch(setError)
+      return
+    }
     getDoc(ref('meetings', meetingId)).then((s) => setMeeting(s.exists() ? { id: s.id, ...s.data() } : false)).catch(setError)
   }, [user, meetingId])
   useEffect(() => { if (isMember && memberId) setWho('member') }, [isMember, memberId])
@@ -36,7 +44,7 @@ export default function CheckIn() {
   const guestCheckIn = (e) => {
     e.preventDefault()
     run(() => addDoc(col('checkins'), {
-      meetingId, code, uid: user.uid, at: serverTimestamp(),
+      meetingId: meeting.id, code, uid: user.uid, at: serverTimestamp(),
       name: form.name.trim(), phone: form.phone.trim(), email: normEmail(form.email),
       source: form.source, invitedBy: form.invitedBy.trim(), interest: form.interest,
       firstVisit: form.firstVisit, consent: form.consent, guestId: guestId || '',
@@ -46,6 +54,19 @@ export default function CheckIn() {
 
   if (!user || meeting === null) return error ? <ErrorNote error={error} /> : <Loading />
   if (meeting === false) return <div className="card">This check-in link is not valid. Please scan the QR code again.</div>
+  if (meeting === 'none') {
+    return <div className="card stack"><h1>Welcome!</h1><p>There is no club meeting today. This QR code works on meeting days.</p><Link className="btn" to="/about">About the club app</Link></div>
+  }
+  // Poster check-in is only accepted from an hour before the meeting to an hour after it.
+  const opens = meetingId === 'today' && meeting.checkinStart?.toDate?.()
+  const closes = meetingId === 'today' && meeting.checkinEnd?.toDate?.()
+  const time = (d) => d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })
+  if (opens && Date.now() < opens.getTime()) {
+    return <div className="card stack"><h1>Welcome!</h1><p>Check-in for today's meeting opens at <b>{time(opens)}</b>. Please scan again then.</p></div>
+  }
+  if (closes && Date.now() > closes.getTime()) {
+    return <div className="card stack"><h1>Thank you!</h1><p>Check-in for today's meeting closed at {time(closes)}. Please speak to the Sergeant at Arms.</p></div>
+  }
 
   const header = (
     <div className="card accent">
