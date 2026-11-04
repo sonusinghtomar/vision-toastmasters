@@ -47,7 +47,7 @@ export default function MeetingDetail() {
         ? <AgendaEditor key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />
         : <AgendaView meeting={meeting} />)}
       {tab === 'attendance' && isAdmin && <Attendance key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />}
-      {tab === 'qr' && isAdmin && <QrPanel key={meeting.id} meeting={meeting} />}
+      {tab === 'qr' && isAdmin && <QrPanel key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />}
       {tab === 'awards' && <Awards key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} editable={isAdmin} />}
       {tab === 'share' && <Share meeting={meeting} />}
     </>
@@ -200,21 +200,36 @@ function AgendaEditor({ meeting, members, guests }) {
 }
 
 // ── Attendance ─────────────────────────────────────────────
-function Attendance({ meeting, members, guests }) {
+// Live attendance for a meeting. Officer screens also merge guest QR check-ins as they
+// arrive (and retry every 30 s in case another officer's device left one half-done).
+function useLiveAttendance(meeting, guests) {
   const { data: att } = useList(() => query(col('attendance'), where('meetingId', '==', meeting.id)), [meeting.id])
   const { data: pending } = useList(() => query(col('checkins'), where('meetingId', '==', meeting.id)), [meeting.id])
   const [error, setError] = useState(null)
-  const [adding, setAdding] = useState(false)
-  const [filter, setFilter] = useState('')
   const processing = useRef(false)
-  const present = new Set(att.map((a) => a.personId))
-
-  // Merge guest QR check-ins as they arrive.
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    if (!pending.length) return
+    const t = setInterval(() => setTick((n) => n + 1), 30000)
+    return () => clearInterval(t)
+  }, [pending.length])
   useEffect(() => {
     if (!pending.length || processing.current) return
     processing.current = true
-    processCheckins(meeting, [...guests]).catch(setError).finally(() => { processing.current = false })
-  }, [pending.length, meeting, guests])
+    processCheckins(meeting, [...guests])
+      // More scans may have arrived while merging: look again straight away if this pass made progress.
+      .then((added) => { if (added) setTick((n) => n + 1) })
+      .catch(setError)
+      .finally(() => { processing.current = false })
+  }, [pending.length, meeting, guests, tick])
+  return { att, pending, error, setError }
+}
+
+function Attendance({ meeting, members, guests }) {
+  const { att, pending, error, setError } = useLiveAttendance(meeting, guests)
+  const [adding, setAdding] = useState(false)
+  const [filter, setFilter] = useState('')
+  const present = new Set(att.map((a) => a.personId))
 
   const toggle = (p, type) => (present.has(p.id) ? unmarkAttendance(meeting, p, type) : markAttendance(meeting, p, type)).catch(setError)
   const markRoleHolders = async () => {
@@ -313,8 +328,41 @@ function AddGuest({ meeting, guests, present, onClose, onError }) {
 }
 
 // ── QR check-in ────────────────────────────────────────────
-function QrPanel({ meeting }) {
+// Big live counts plus the latest arrivals, shown above the QR code.
+function Headcount({ att, pending, members, meetingId }) {
+  const memberCount = att.filter((a) => a.personType === 'member').length
+  const guestCount = att.filter((a) => a.personType === 'guest').length + pending.length
+  const recent = [...att, ...pending.map((c) => ({ ...c, id: 'p' + c.id, personType: 'guest', method: 'qr' }))]
+    .sort((a, b) => (b.at?.toMillis?.() || 0) - (a.at?.toMillis?.() || 0)).slice(0, 8)
+  const time = (t) => t?.toDate?.().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) || ''
+  return (
+    <div className="card" aria-live="polite">
+      <div className="headcount">
+        <div><b>{memberCount}<small>/{members.length}</small></b><span>Members</span></div>
+        <div><b>{guestCount}</b><span>Guests</span></div>
+        <div><b>{memberCount + guestCount}</b><span>Total</span></div>
+      </div>
+      {recent.length > 0 && (
+        <>
+          <p className="muted" style={{ margin: '.8rem 0 .2rem' }}>Just checked in</p>
+          <ul className="list">{recent.map((a) => (
+            <li key={a.id} style={{ padding: '.35rem 0' }}>
+              <span className="grow ellipsis">{a.name}</span>
+              <span className={`chip ${a.personType === 'guest' ? 'yellow' : ''}`}>{a.personType === 'guest' ? 'Guest' : 'Member'}</span>
+              <small className="muted" style={{ width: 62, textAlign: 'right' }}>{time(a.at)}</small>
+            </li>))}</ul>
+        </>
+      )}
+      <p style={{ margin: '.6rem 0 0' }}><Link to={`/meetings/${meetingId}?tab=attendance`}>Full attendance list →</Link></p>
+    </div>
+  )
+}
+
+function QrPanel({ meeting, members, guests }) {
   const { data: codeDoc, loading } = useDoc('checkinCodes', meeting.id)
+  const { att, pending, error: attError } = useLiveAttendance(meeting, guests)
+  const memberCount = att.filter((a) => a.personType === 'member').length
+  const guestCount = att.filter((a) => a.personType === 'guest').length + pending.length
   const [img, setImg] = useState('')
   const [big, setBig] = useState(false)
   const [error, setError] = useState(null)
@@ -337,8 +385,10 @@ function QrPanel({ meeting }) {
 
   if (loading) return <Loading />
   return (
+    <>
+    <Headcount att={att} pending={pending} members={members} meetingId={meeting.id} />
     <div className="card stack">
-      <ErrorNote error={error} />
+      <ErrorNote error={error || attError} />
       {!codeDoc?.open ? (
         <>
           <p>Open check-in to show a QR code. Members and guests scan it with their phone camera to mark themselves present.</p>
@@ -361,10 +411,15 @@ function QrPanel({ meeting }) {
       )}
       {big && img && (
         <div className="modal-back" onClick={() => setBig(false)} style={{ background: '#fff' }}>
-          <div className="qr"><img src={img} alt="Check-in QR code" style={{ width: 'min(92vw, 92vh)' }} /><h2 style={{ color: '#004165' }}>Scan to check in</h2></div>
+          <div className="qr">
+            <img src={img} alt="Check-in QR code" style={{ width: 'min(92vw, 80vh)' }} />
+            <h2 style={{ color: '#004165', margin: '.5rem 0 .2rem' }}>Scan to check in</h2>
+            <p style={{ color: '#1d2a33', fontSize: '1.2rem', margin: 0 }} aria-live="polite">✅ {memberCount} members · {guestCount} guests checked in</p>
+          </div>
         </div>
       )}
     </div>
+    </>
   )
 }
 

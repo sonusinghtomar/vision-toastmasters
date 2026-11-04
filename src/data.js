@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   collection, doc, onSnapshot, query, where, orderBy, addDoc, setDoc, updateDoc, deleteDoc,
-  getDoc, getDocs, writeBatch, serverTimestamp, increment,
+  getDoc, getDocs, writeBatch, serverTimestamp, increment, runTransaction,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { ROLE_LABEL } from './constants'
@@ -192,11 +192,28 @@ export async function unmarkAttendance(meeting, person, type) {
 }
 
 // Merge pending guest QR check-ins into guests + attendance (runs on an officer's device).
+// Several officers may have the QR or Attendance screen open, so each check-in is first
+// claimed in a transaction: only one device merges it. A claim that is not finished
+// (e.g. the device went offline) expires after two minutes and another device retries.
+const CLAIM_MS = 2 * 60 * 1000
+async function claimCheckin(docRef, claimId) {
+  return runTransaction(db, async (tx) => {
+    const s = await tx.get(docRef)
+    if (!s.exists()) return null
+    const c = s.data()
+    if (c.claimId && c.claimId !== claimId && Date.now() - (c.claimedAt || 0) < CLAIM_MS) return null
+    tx.update(docRef, { claimId, claimedAt: Date.now() })
+    return c
+  })
+}
+
 export async function processCheckins(meeting, guests) {
   const snap = await getDocs(query(col('checkins'), where('meetingId', '==', meeting.id)))
+  const claimId = Math.random().toString(36).slice(2)
   let added = 0
   for (const d of snap.docs) {
-    const c = d.data()
+    const c = await claimCheckin(d.ref, claimId).catch(() => null)
+    if (!c) continue
     const email = normEmail(c.email)
     const phone = (c.phone || '').replace(/\D/g, '').slice(-10)
     let guest = (c.guestId && guests.find((g) => g.id === c.guestId))

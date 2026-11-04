@@ -211,3 +211,9 @@ label.check input { margin: 0; }
   .poster h2 { font-size: 26pt; }
   .poster ol { font-size: 15pt; }
 }
+
+/* Live headcount on the QR check-in screen */
+.headcount { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; text-align: center; }
+.headcount b { display: block; font-size: 2.4rem; line-height: 1.1; color: var(--blue-2); font-variant-numeric: tabular-nums; }
+.headcount b small { font-size: 1rem; color: var(--muted); font-weight: 600; }
+.headcount span { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
