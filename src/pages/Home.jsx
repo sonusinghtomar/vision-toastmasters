@@ -5,6 +5,7 @@ import { useAuth, resendVerification } from '../auth'
 import { useMeetings, useList, useGuests, col, query, where, today, fmtDate, programYear, programYearRange, useDoc } from '../data'
 import { ROLE_LABEL } from '../constants'
 import { enableNotifications, remindUpcoming } from '../notify'
+import { meetsText } from '../schedule'
 import { Loading, useClub } from '../components/ui'
 
 export default function Home() {
@@ -184,7 +185,7 @@ function GuestHome() {
       </div>
       <div className="card">
         <h2>About the club</h2>
-        <p>{club.name} meets every {club.meetingDay}, {club.startTime} to {club.endTime}.</p>
+        <p>{club.name} {meetsText(club)}, {club.startTime} to {club.endTime}.</p>
         <p className="muted">{club.venue}</p>
         {club.meetupUrl && <a className="btn" href={club.meetupUrl} target="_blank" rel="noreferrer">Meetup page</a>}
       </div>

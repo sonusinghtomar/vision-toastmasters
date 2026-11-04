@@ -5,6 +5,7 @@ import { useAuth } from '../auth'
 import { useDoc, useList, col, ref, query, where, updateDoc, deleteDoc, fmtDate, today, serverTimestamp, byDateDesc } from '../data'
 import { GUEST_SOURCES, GUEST_STATUSES } from '../constants'
 import { whatsappLink } from '../notify'
+import { meetsText } from '../schedule'
 import { Loading, ErrorNote, Avatar, useClub } from '../components/ui'
 
 export default function GuestDetail() {
@@ -38,7 +39,7 @@ export default function GuestDetail() {
       nav(`/members/${r.id}`)
     } catch (e) { setErr(e) }
   }
-  const msg = `Hi ${g.name.split(' ')[0]}, thank you for visiting ${club.name}! We meet every ${club.meetingDay} at ${club.startTime}. We would love to see you again.`
+  const msg = `Hi ${g.name.split(' ')[0]}, thank you for visiting ${club.name}! The club ${meetsText(club)} at ${club.startTime}. We would love to see you again.`
 
   if (!isAdmin) {
     return (

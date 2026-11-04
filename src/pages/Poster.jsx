@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { useDoc, useMeetings, ref, setDoc, updateDoc, serverTimestamp, checkinWindow, todayIST, CHECKIN_MARGIN_MIN, fmtDate } from '../data'
 import { download } from '../export'
+import { meetsText } from '../schedule'
 import { Loading, ErrorNote, useClub } from '../components/ui'
 
 const LOGO_URL = `${import.meta.env.BASE_URL}club-logo.webp`
@@ -72,7 +73,7 @@ export default function Poster() {
             <li><b>Members:</b> tap “Check me in”.</li>
             <li><b>Guests:</b> tap “I am a guest” and fill in your name.</li>
           </ol>
-          <p className="poster-foot">{club.name} · Club {club.number} · meets every {club.meetingDay}, {club.startTime}</p>
+          <p className="poster-foot">{club.name} · Club {club.number} · {meetsText(club)}, {club.startTime}</p>
         </div>
       )}
     </>

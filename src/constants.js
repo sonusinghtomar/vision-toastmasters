@@ -7,6 +7,7 @@ export const CLUB_DEFAULTS = {
   district: 'District 126',
   venue: 'Goethe Zentrum, Road # 3, Banjara Hills, Hyderabad 500034',
   meetingDay: 'Sunday',
+  meetingWeeks: '1,3,5', // weeks of the month; blank = every week
   startTime: '09:45',
   endTime: '12:45',
   meetupUrl: 'https://www.meetup.com/visiontm',

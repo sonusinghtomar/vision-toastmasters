@@ -21,6 +21,11 @@ const FEATURES = [
 // Each guide: [section title, steps]. Keep wording in sync with the button labels in the app.
 const GUIDES = {
   officers: [
+    ['Plan the season (once)', [
+      'Meetings → Plan meetings creates every meeting for the year on the club\'s pattern (1st, 3rd and 5th Sunday) with the standard agenda and the next meeting numbers.',
+      'Dates that already have a meeting are skipped, so it is safe to run again. The check-in poster then works at every planned meeting.',
+      'The pattern is set in Settings → Club details (Meeting day, Weeks of the month).',
+    ]],
     ['Before the meeting', [
       'Go to Meetings → Import agenda, choose the agenda PDF or take a photo, and tap Read agenda.',
       'Check the roles. Tap "Add as member" for any name the app does not know yet, then Create meeting.',
