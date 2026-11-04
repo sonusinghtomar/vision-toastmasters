@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { googleSignIn, emailSignIn, emailSignUp, resetPassword } from '../auth'
 
 const ICON_URL = `${import.meta.env.BASE_URL}icon-192.png`
@@ -78,8 +79,10 @@ export default function Login() {
         </div>
       </div>
       <p className="footer-note">
-        Guests: you do not need an account to check in. Scan the QR code at the meeting.
+        Guests: you do not need an account to check in. Scan the QR code at the meeting.<br />
+        <Link to="/about">About this app and how to use it</Link>
       </p>
+      <p className="footer-note" style={{ marginTop: '.5rem' }}>Developed by Sonu Singh Tomar</p>
     </div>
   )
 }

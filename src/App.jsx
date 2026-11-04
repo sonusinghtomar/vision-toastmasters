@@ -18,6 +18,7 @@ import Dcp from './pages/Dcp'
 import Admin from './pages/Admin'
 import Settings from './pages/Settings'
 import More from './pages/More'
+import About from './pages/About'
 
 // Pages that pull in Gemini or the Excel writer load on demand.
 const AgendaImport = lazy(() => import('./pages/AgendaImport'))
@@ -46,7 +47,9 @@ function Shell() {
     return <Frame><Routes><Route path="/checkin/:meetingId" element={<CheckIn />} /></Routes></Frame>
   }
   if (user === undefined || loading) return <Frame><Loading /></Frame>
-  if (!user || user.isAnonymous) return <Frame><Login /></Frame>
+  if (!user || user.isAnonymous) {
+    return <Frame>{loc.pathname === '/about' ? <About /> : <Login />}</Frame>
+  }
 
   const officer = (el) => (isAdmin ? el : <Navigate to="/" replace />)
   const member = (el) => (isMember ? el : <Navigate to="/" replace />)
@@ -68,6 +71,7 @@ function Shell() {
         <Route path="/admin" element={officer(<Admin />)} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/more" element={<More />} />
+        <Route path="/about" element={<About />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
