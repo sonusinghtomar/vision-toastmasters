@@ -58,7 +58,7 @@ The app lives at **https://vision-toastmasters.web.app**. GitHub deploys it on e
 6. Delete the downloaded file from your computer. Never share it in chat or email.
 7. In GitHub, go to **Actions → Deploy → Run workflow**. In about two minutes the app is live.
 
-The old address, `sonusinghtomar.github.io/vision-toastmasters`, forwards to the new one (QR links included) once the app has deployed. In **Settings → Pages**, the source stays **GitHub Actions**.
+The old address, `sonusinghtomar.github.io/vision-toastmasters`, forwards to the new one (QR links included) once the app has deployed. This works whether **Settings → Pages** is set to **GitHub Actions** or **Deploy from a branch**.
 
 ## 7. Make yourself President (super-admin)
 

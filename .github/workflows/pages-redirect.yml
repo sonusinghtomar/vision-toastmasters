@@ -5,7 +5,7 @@ name: Old address redirect
 on:
   push:
     branches: [main]
-    paths: ['redirect/**']
+    paths: ['redirect/**', 'sw.js']
   workflow_dispatch:
 
 concurrency:
@@ -23,6 +23,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - run: cp sw.js redirect/sw.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: redirect
