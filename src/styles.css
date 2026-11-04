@@ -179,6 +179,10 @@ th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-s
 .login { max-width: 400px; margin: 2rem auto; }
 .brand { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin-bottom: 1.5rem; }
 .brand img { width: 72px; height: 72px; border-radius: 18px; }
+/* The club logo is dark blue on white, so it always sits on a white card, also in dark mode. */
+.club-logo, .brand img.club-logo { display: block; width: 100%; max-width: 300px; height: auto; margin: 0 auto; background: #fff; border-radius: 12px; padding: 8px; }
+.brand img.club-logo { width: 100%; height: auto; max-width: 280px; }
+.topbar img { background: #fff; }
 .divider { display: flex; align-items: center; gap: .6rem; color: var(--muted); font-size: .85rem; margin: 1rem 0; }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 .rec { width: 96px; height: 96px; border-radius: 50%; font-size: 1rem; }

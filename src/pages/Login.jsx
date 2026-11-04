@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { googleSignIn, emailSignIn, emailSignUp, resetPassword } from '../auth'
 
-const ICON_URL = `${import.meta.env.BASE_URL}icon-192.png`
+const LOGO_URL = `${import.meta.env.BASE_URL}club-logo.webp`
 
 const friendly = (e) => ({
   'auth/invalid-credential': 'Email or password is incorrect.',
@@ -48,8 +48,7 @@ export default function Login() {
   return (
     <div className="login">
       <div className="brand">
-        <img src={ICON_URL} alt="" />
-        <h1>Vision Toastmasters</h1>
+        <img src={LOGO_URL} alt="Vision Toastmasters (Community Club), Club 991226, Hyderabad" className="club-logo" />
         <p className="muted center">Attendance, guests, speeches and Pathways in one place</p>
       </div>
       <div className="card">
@@ -82,7 +81,7 @@ export default function Login() {
         Guests: you do not need an account to check in. Scan the QR code at the meeting.<br />
         <Link to="/about">About this app and how to use it</Link>
       </p>
-      <p className="footer-note" style={{ marginTop: '.5rem' }}>Developed by Sonu Singh Tomar</p>
+      <p className="footer-note" style={{ marginTop: '.5rem' }}>Developed by Sonu Singh Tomar, President, Vision Toastmasters</p>
     </div>
   )
 }

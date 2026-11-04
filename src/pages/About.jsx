@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { Tabs, useClub } from '../components/ui'
 
-const ICON_URL = `${import.meta.env.BASE_URL}icon-192.png`
+const LOGO_URL = `${import.meta.env.BASE_URL}club-logo.webp`
 
 const FEATURES = [
   ['📅', 'Meetings and agendas', 'Every role from SAA to Table Topics, prepared speakers with time slots, Pathways projects and evaluators.'],
@@ -105,8 +105,8 @@ export default function About() {
     <>
       {!signedIn && <p><Link to="/">← Back to sign in</Link></p>}
       <div className="card center">
-        <img src={ICON_URL} alt="" width="64" height="64" style={{ borderRadius: 16 }} />
-        <h1 style={{ marginTop: '.5rem' }}>Vision TM</h1>
+        <img src={LOGO_URL} alt="Vision Toastmasters (Community Club), Club 991226, Hyderabad" className="club-logo" />
+        <h1 style={{ marginTop: '.75rem' }}>Vision TM app</h1>
         <p style={{ margin: 0 }}>The club app of {club.name}</p>
         <p className="muted" style={{ margin: 0 }}>Club {club.number} · {club.area}, {club.division}, {club.district}</p>
       </div>
@@ -147,11 +147,11 @@ export default function About() {
 
       <div className="card center">
         <p style={{ margin: 0 }}>Developed by <b>Sonu Singh Tomar</b></p>
-        <p className="muted" style={{ margin: '.2rem 0 0' }}>for {club.name}</p>
+        <p className="muted" style={{ margin: '.2rem 0 0' }}>President, Vision Toastmasters</p>
       </div>
       <p className="footer-note">
         An independent club tool. Not an official Toastmasters International product.<br />
-        The Toastmasters name and colours are used to identify our club; no Toastmasters logos are used.
+        The club logo belongs to Vision Toastmasters; no Toastmasters International logos are used.
       </p>
     </>
   )

@@ -12,7 +12,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'club-logo.webp'],
       manifest: {
         name: 'Vision Toastmasters Club',
         short_name: 'Vision TM',
