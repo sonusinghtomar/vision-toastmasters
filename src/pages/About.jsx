@@ -8,7 +8,7 @@ const LOGO_URL = `${import.meta.env.BASE_URL}club-logo.webp`
 const FEATURES = [
   ['📅', 'Meetings and agendas', 'Every role from SAA to Table Topics, prepared speakers with time slots, Pathways projects and evaluators.'],
   ['📄', 'Agenda import', 'Upload the agenda PDF or a photo. The app reads the theme, date and all roles for you to check and save.'],
-  ['✅', 'Attendance', 'Officers tick members present, or everyone checks in by scanning the meeting QR code.'],
+  ['✅', 'Attendance', 'Members and guests check themselves in by scanning a printed poster at the venue or an officer\'s phone, and officers can tick anyone who did not scan.'],
   ['🙋', 'Guests and follow-up', 'Guest check-in form, visit count, follow-up notes and reminders, one-tap call or WhatsApp, convert to member.'],
   ['🎓', 'Pathways and speeches', 'Each member\'s path and level, speech log with timing and evaluation notes, and role history.'],
   ['🎙️', 'Voice log', 'Speak or type a note after the meeting. It becomes attendance, speeches, roles, awards and guests.'],
@@ -27,12 +27,18 @@ const GUIDES = {
       'No agenda yet? Use Meetings → ＋ New to get the standard Vision agenda and assign roles by hand.',
       'Open the meeting → Share → Send on WhatsApp to post the role list to the club group.',
     ]],
+    ['Check-in poster (one-time setup)', [
+      'More → 🖨️ Check-in poster → Create poster QR → Print poster. Keep copies at the entrance and the guest table.',
+      'Save QR image puts the same code in a WhatsApp message or on a standee.',
+      'The poster works on meeting days only, from 1 hour before the start until 1 hour after the end, and checks people into that day\'s meeting.',
+      'Check the meeting\'s Start and End times on the Agenda tab: they decide when the poster works. Imported agendas fill them in.',
+      'If a photo of the poster is shared around, tap New code and print again: old posters stop working. Turn off pauses it completely.',
+    ]],
     ['At the meeting', [
-      'Easiest: print the permanent poster once (More → Check-in poster) and keep it at the venue. It works at every meeting, from an hour before until an hour after.',
-      'Or open the meeting → QR check-in → Open check-in, and tap the QR code to show it full screen. Any ExCom officer can show the same code.',
-      'Members scan and tap "Check me in". Guests scan and fill a short form, no account needed.',
-      'On the Attendance tab, tick anyone who did not scan, or tap "Mark all role-holders present".',
-      'Close check-in when the meeting ends so the code stops working.',
+      'With the poster up, there is nothing to open. Members scan and tap "Check me in". Guests scan, tap "I am a guest" and fill a short form, no account needed.',
+      'No poster? Open the meeting → QR check-in → Open check-in and tap the code to show it full screen. Several officers can show the same code at once.',
+      'Attendance tab: see who has checked in and the count, tick anyone who did not scan, or tap "Mark all role-holders present".',
+      'If you used the meeting QR, tap Close check-in when the meeting ends.',
     ]],
     ['After the meeting', [
       'Awards tab: choose Best Speaker, Best Evaluator, Role Players, Listener and Table Topics, then Save.',
@@ -51,7 +57,8 @@ const GUIDES = {
     ]],
     ['Members and access (President)', [
       'Members → ＋ Add member with the email they sign in with, so their account links automatically.',
-      'More → Users and access: link accounts to member or guest records. Only the President can make someone an Admin (officer).',
+      'More → Users and access: set each ExCom officer (SAA, Secretary, Treasurer, VPPR, VP Membership, VP Education) to Admin after they sign in once, so they can show the check-in QR, print the poster and take attendance. Only the President can grant Admin.',
+      'Also in Users and access: link any account that did not link automatically to its member or guest record.',
       'Reports → Download Excel gives the whole year\'s attendance, speeches, roles, guests and awards.',
     ]],
   ],
@@ -69,13 +76,13 @@ const GUIDES = {
     ]],
     ['Meetings', [
       'Home shows the next meeting and your upcoming roles. Tap "Remind me before my roles" to get a reminder.',
-      'At the meeting, scan the QR code with your phone camera and tap "Check me in".',
+      'At the meeting, scan the check-in poster (or an officer\'s phone) with your phone camera and tap "Check me in". That\'s your attendance done.',
       'Voice log: say what you did ("I gave my Level 2 speech, 6 minutes, evaluated by Prasad") and save it to your log.',
     ]],
   ],
   guests: [
     ['Checking in', [
-      'At the meeting, scan the check-in QR code (on the poster or an officer\'s phone) with your phone camera.',
+      'At the meeting, scan the check-in poster at the entrance (or the code on an officer\'s phone) with your phone camera.',
       'Tap "I am a guest", fill in your name and contact details, and tap Check in. No account or app needed.',
     ]],
     ['Seeing your visits', [
@@ -92,6 +99,8 @@ const GUIDES = {
 const FAQ = [
   ['Who can see my details?', 'Members see the member list and meeting data. Guest contact details are visible to officers only. Guests see only their own visits.'],
   ['Does it work without internet?', 'Yes, for screens you have opened before. Changes you make offline are saved on your phone and sync when you reconnect.'],
+  ['When does the check-in poster work?', 'On meeting days, from 1 hour before the meeting starts until 1 hour after it ends. On other days it says there is no meeting, so a photo of it is no use at home.'],
+  ['I scanned and it says check-in is closed or the code changed', 'You may be outside meeting hours, or the poster was replaced with a new code. Ask the Sergeant at Arms to check you in from the Attendance tab.'],
   ['A blue bar says a new version is available', 'Tap Update. The app reloads with the latest version.'],
   ['Something looks wrong', 'Take a screenshot and send it to the President.'],
 ]

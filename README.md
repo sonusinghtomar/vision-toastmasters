@@ -13,7 +13,7 @@ Install it on a phone from the browser ("Add to Home screen"). It keeps working 
 | **Meetings** | Club agenda with every role (SAA, Presiding Officer, TMOD, GE, Timer, Ah Counter, Grammarian, Listener, Ballot Counter, Photographer, Table Topics), prepared speakers with time window, Pathways project and evaluator |
 | **Agenda import** | Upload the agenda PDF or a photo. Gemini reads the meeting number, theme, date and roles and matches names to members, and you review before saving |
 | **Voice log** | Speak or type a note ("Suhair did Ice Breaker, 6:40, evaluated by Prasad; guest Ravi from Meetup; best speaker Pavani"). It becomes attendance, speeches, roles, awards and guest records after you review it |
-| **Attendance** | Officer tick list, "mark all role-holders present", and **QR self check-in** for members and guests |
+| **Attendance** | **Printed check-in poster** that works at every meeting (meeting hours only), per-meeting QR on an officer's phone, officer tick list and "mark all role-holders present" |
 | **Guests** | Check-in form (name, phone, email, how they heard, interest), visit count, follow-up status and notes, next follow-up date, one-tap call/WhatsApp/email, convert to member |
 | **Education** | Pathways paths and levels, speech log with evaluation notes, role history with "not yet tried" hints, education awards |
 | **Awards & DCP** | Best Speaker, Best Evaluator, Best Role Player (Main and Auxiliary), Best Listener, Best Table Topics. DCP goals counted automatically from awards and new members |

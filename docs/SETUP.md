@@ -79,6 +79,15 @@ Add each member with their **email address**. When they sign in with that email 
 
 You can also skip typing the roster: import a recent agenda and tap **Add as member** next to each name the app does not recognise.
 
+## 9. Give ExCom access and print the check-in poster
+
+1. Ask each ExCom officer (SAA, Secretary, Treasurer, VPPR, VP Membership, VP Education) to sign in once.
+2. **More → Users and access**: set each of them to **Admin**.
+3. **More → 🖨️ Check-in poster → Create poster QR → Print poster**, and keep it at the venue.
+   It checks people into that day's meeting from 1 hour before the start until 1 hour after the end.
+
+Whenever `firestore.rules` changes, publish it again (step 4).
+
 ---
 
 ## Costs and limits
