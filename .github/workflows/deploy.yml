@@ -28,22 +28,3 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           projectId: vision-toastmasters
           channelId: live
-
-  # The old address (sonusinghtomar.github.io/vision-toastmasters) forwards to the app.
-  # Runs only after the app deployed successfully.
-  pages-redirect:
-    needs: firebase
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: redirect
-      - id: deployment
-        uses: actions/deploy-pages@v4
