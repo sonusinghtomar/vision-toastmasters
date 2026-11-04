@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useLocation, Link } from 'react-router-dom'
 import { addDoc, getDoc, getDocs } from 'firebase/firestore'
 import { useAuth, anonymousSignIn, googleSignIn } from '../auth'
-import { col, ref, query, where, fmtDate, markAttendanceSelf, normEmail, serverTimestamp, todayIST } from '../data'
+import { col, ref, query, where, useDoc, fmtDate, markAttendanceSelf, normEmail, serverTimestamp, todayIST } from '../data'
 import { GUEST_SOURCES } from '../constants'
 import { Loading, ErrorNote } from '../components/ui'
 
@@ -13,6 +13,9 @@ export default function CheckIn() {
   const code = new URLSearchParams(useLocation().search).get('c') || ''
   const { user, isMember, memberId, guestId, profile } = useAuth()
   const [meeting, setMeeting] = useState(null)
+  // Record attendance under the roster name, not the sign-in account's display name.
+  const { data: member } = useDoc('members', isMember ? memberId : '')
+  const myName = member?.name || profile?.name
   const [who, setWho] = useState(null) // 'member' | 'guest'
   const [done, setDone] = useState(false)
   const [error, setError] = useState(null)
@@ -40,7 +43,7 @@ export default function CheckIn() {
     try { await fn(); setDone(true) } catch (e) { setError(e) }
     setBusy(false)
   }
-  const memberCheckIn = () => run(() => markAttendanceSelf(meeting, memberId, profile?.name, code))
+  const memberCheckIn = () => run(() => markAttendanceSelf(meeting, memberId, myName, code))
   const guestCheckIn = (e) => {
     e.preventDefault()
     run(() => addDoc(col('checkins'), {
@@ -104,7 +107,7 @@ export default function CheckIn() {
       {who === 'member' && (
         <div className="card stack">
           {isMember && memberId
-            ? <button className="full primary" disabled={busy} onClick={memberCheckIn}>Check me in as {profile?.name}</button>
+            ? <button className="full primary" disabled={busy} onClick={memberCheckIn}>Check me in as {myName}</button>
             : (
               <>
                 <p>Sign in with your member account to check in.</p>
