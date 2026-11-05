@@ -28,7 +28,7 @@ export default function More() {
       </div>
       <p className="footer-note">
         {club.name} · Club {club.number} · {club.area}, {club.division}, {club.district}<br />
-        Developed by Sonu Singh Tomar, President, Vision Toastmasters · <Link to="/about">About</Link><br />
+        Developed by Sonu Singh Tomar · <Link to="/about">About</Link><br />
         An independent club tool. Not an official Toastmasters International product.
       </p>
     </>

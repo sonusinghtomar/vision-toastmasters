@@ -162,7 +162,6 @@ export default function About() {
 
       <div className="card center">
         <p style={{ margin: 0 }}>Developed by <b>Sonu Singh Tomar</b></p>
-        <p className="muted" style={{ margin: '.2rem 0 0' }}>President, Vision Toastmasters</p>
       </div>
       <p className="footer-note">
         An independent club tool. Not an official Toastmasters International product.<br />

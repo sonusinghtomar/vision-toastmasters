@@ -50,4 +50,4 @@ docs/SETUP.md      Setup guide
 
 The app uses the club's own Vision Toastmasters logo and the Toastmasters brand colours. It does not use the Toastmasters International logo or other trademarked artwork. This is an independent club tool, not an official Toastmasters International product.
 
-Developed by Sonu Singh Tomar, President, Vision Toastmasters.
+Developed by Sonu Singh Tomar.

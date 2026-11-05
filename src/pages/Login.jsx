@@ -81,7 +81,7 @@ export default function Login() {
         Guests: you do not need an account to check in. Scan the QR code at the meeting.<br />
         <Link to="/about">About this app and how to use it</Link>
       </p>
-      <p className="footer-note" style={{ marginTop: '.5rem' }}>Developed by Sonu Singh Tomar, President, Vision Toastmasters</p>
+      <p className="footer-note" style={{ marginTop: '.5rem' }}>Developed by Sonu Singh Tomar</p>
     </div>
   )
 }
