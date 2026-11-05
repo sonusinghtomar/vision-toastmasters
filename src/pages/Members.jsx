@@ -22,7 +22,12 @@ export default function Members() {
     <>
       <div className="row between">
         <h1>Members ({data.filter((m) => m.status !== 'inactive').length})</h1>
-        {isAdmin && <button className="small primary" onClick={() => setAdding(true)}>＋ Add member</button>}
+        {isAdmin && (
+          <div className="row">
+            <Link className="btn small" to="/members/import">Import roster</Link>
+            <button className="small primary" onClick={() => setAdding(true)}>＋ Add member</button>
+          </div>
+        )}
       </div>
       <ErrorNote error={error} />
       <div className="row" style={{ marginBottom: '1rem' }}>

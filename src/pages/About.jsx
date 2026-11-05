@@ -21,6 +21,10 @@ const FEATURES = [
 // Each guide: [section title, steps]. Keep wording in sync with the button labels in the app.
 const GUIDES = {
   officers: [
+    ['Requests and approvals', [
+      'A badge on More and a "Needs your approval" card on Home show role requests from members and people waiting for access. With notifications allowed, your phone also alerts you while the app is open.',
+      'More → 🔔 Requests: Approve puts the member on the agenda (anyone else who asked for that role is told it has gone); Decline lets them know.',
+    ]],
     ['Plan the season (once)', [
       'Meetings → Plan meetings creates every meeting for the year on the club\'s pattern (1st, 3rd and 5th Sunday) with the standard agenda and the next meeting numbers.',
       'Dates that already have a meeting are skipped, so it is safe to run again. The check-in poster then works at every planned meeting.',
@@ -61,9 +65,13 @@ const GUIDES = {
       'DCP shows progress on the ten goals. Education and new-member goals count automatically.',
     ]],
     ['Members and access (President)', [
-      'Members → ＋ Add member with the email they sign in with, so their account links automatically.',
+      'Members → Import roster: choose the roster file downloaded from Club Central (Excel or CSV). Names, emails, phones, join dates and officer positions are added in one go, and running it again only updates.',
+      'Members whose email is on the roster are linked automatically when they sign in, so they never wait for approval. For one person, use Members → ＋ Add member.',
+      'Settings → Club details: add your WhatsApp number for access requests, so new people can message you from their waiting screen.',
       'More → Users and access: set each ExCom officer (SAA, Secretary, Treasurer, VPPR, VP Membership, VP Education) to Admin after they sign in once, so they can show the check-in QR, print the poster and take attendance. Only the President can grant Admin.',
+      'Or tap "Make ExCom officers Admin" at the top of Users and access: everyone with an officer title who has signed in gets Admin in one tap.',
       'Also in Users and access: link any account that did not link automatically to its member or guest record.',
+      'Once a month, Home reminds you to download the Excel backup (Reports → Download Excel). Keep it in Google Drive or email.',
       'Reports → Download Excel gives the whole year\'s attendance, speeches, roles, guests and awards.',
     ]],
   ],
@@ -81,6 +89,7 @@ const GUIDES = {
     ]],
     ['Meetings', [
       'Home shows the next meeting and your upcoming roles. Tap "Remind me before my roles" to get a reminder.',
+      'Want a role? Open an upcoming meeting and tap "Ask for this role" on any open slot, or "Ask to evaluate" under a speaker. Home shows when it is approved.',
       'At the meeting, scan the check-in poster (or an officer\'s phone) with your phone camera and tap "Check me in". That\'s your attendance done.',
       'Voice log: say what you did ("I gave my Level 2 speech, 6 minutes, evaluated by Prasad") and save it to your log.',
     ]],

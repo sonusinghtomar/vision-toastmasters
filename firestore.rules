@@ -54,7 +54,7 @@ service cloud.firestore {
         || (isAdmin() && resource.data.role in ['pending', 'member', 'guest']
             && request.resource.data.role in ['pending', 'member', 'guest'])
         // Anyone can edit their own display preferences.
-        || (request.auth.uid == uid && changedOnly(['name', 'photoURL', 'notify', 'lastSeen']))
+        || (request.auth.uid == uid && changedOnly(['name', 'photoURL', 'notify', 'lastSeen', 'lastBackup']))
         // Self-link: a pending user claims the member/guest record that carries their verified email.
         || (request.auth.uid == uid && resource.data.role == 'pending' && verifiedEmail()
             && changedOnly(['role', 'memberId'])
@@ -137,6 +137,20 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (isMember() && resource.data.personId == myMemberId() && request.resource.data.personId == myMemberId());
       allow delete: if isAdmin() || (isMember() && resource.data.personId == myMemberId());
+    }
+
+    // Members ask for an open meeting role; officers approve or decline.
+    match /roleRequests/{id} {
+      allow read: if isAdmin() || (isMember() && resource.data.memberId == myMemberId());
+      allow create: if isMember() && myMemberId() != ''
+        && request.resource.data.memberId == myMemberId()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.keys().hasOnly(['meetingId', 'meetingNo', 'date', 'slotKey', 'part', 'role',
+             'roleLabel', 'memberId', 'name', 'note', 'status', 'createdAt'])
+        && request.resource.data.note is string && request.resource.data.note.size() <= 300;
+      allow update: if isAdmin();
+      allow delete: if isAdmin()
+        || (isMember() && resource.data.memberId == myMemberId() && resource.data.status == 'pending');
     }
 
     // Education awards (Pathways levels, path completions) and DCP tracking.

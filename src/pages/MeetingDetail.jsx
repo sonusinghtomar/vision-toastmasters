@@ -6,7 +6,7 @@ import { db } from '../firebase'
 import { useAuth } from '../auth'
 import {
   useDoc, useMembers, useGuests, useList, col, ref, query, where, saveMeeting, updateDoc, setDoc,
-  markAttendance, unmarkAttendance, processCheckins, fmtDate, byName, newSlotKey, serverTimestamp, normEmail, today,
+  markAttendance, unmarkAttendance, processCheckins, requestRole, deleteDoc, fmtDate, byName, newSlotKey, serverTimestamp, normEmail, today,
 } from '../data'
 import { ROLES, ROLE_LABEL, MEETING_AWARDS, PATHS, COMMON_PROJECTS } from '../constants'
 import { downloadIcs, rolesMessage, whatsappLink } from '../notify'
@@ -45,7 +45,7 @@ export default function MeetingDetail() {
       <Tabs tabs={tabs} value={tab} onChange={(t) => setParams({ tab: t })} />
       {tab === 'agenda' && (isAdmin
         ? <AgendaEditor key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />
-        : <AgendaView meeting={meeting} />)}
+        : <AgendaView meeting={meeting} members={active} />)}
       {tab === 'attendance' && isAdmin && <Attendance key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />}
       {tab === 'qr' && isAdmin && <QrPanel key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} />}
       {tab === 'awards' && <Awards key={meeting.id} meeting={meeting} members={active} guests={sortedGuests} editable={isAdmin} />}
@@ -55,23 +55,64 @@ export default function MeetingDetail() {
 }
 
 // ── Agenda ─────────────────────────────────────────────────
-function AgendaView({ meeting }) {
+function AgendaView({ meeting, members }) {
+  const { memberId, isMember } = useAuth()
+  const { data: mine } = useList(() => (memberId ? query(col('roleRequests'), where('memberId', '==', memberId)) : null), [memberId])
+  const [asking, setAsking] = useState(null) // { slot, part }
+  const [sent, setSent] = useState(null)
+  const canAsk = isMember && memberId && meeting.date >= today()
+  const me = members.find((m) => m.id === memberId)
+  const reqFor = (slot, part) => mine.find((r) => r.meetingId === meeting.id && r.slotKey === slot.key && r.part === part && r.status === 'pending')
+  const vpe = members.find((m) => m.officerTitle === 'VP Education' && m.phone)
+
+  const Ask = ({ slot, part, label }) => {
+    const r = reqFor(slot, part)
+    if (r) return <span className="row" style={{ gap: '.3rem', marginTop: '.3rem' }}><span className="chip yellow">Requested</span><button className="link" onClick={() => deleteDoc(ref('roleRequests', r.id))}>Cancel</button></span>
+    return <button className="small" style={{ marginTop: '.3rem' }} onClick={() => setAsking({ slot, part })}>{label}</button>
+  }
   return (
-    <div className="card">
-      <ul className="list">
-        {(meeting.slots || []).map((s) => (
-          <li key={s.key} style={{ alignItems: 'flex-start' }}>
-            <small style={{ width: 44, flex: 'none' }}>{s.time}</small>
-            <span className="grow">
-              <b>{ROLE_LABEL[s.role] || s.role}</b>{s.duration ? <small> ({s.duration} min)</small> : null}<br />
-              {s.person?.name || <span className="muted">To be assigned</span>}
-              {s.title && <><br /><small>“{s.title}”{s.project ? ` · ${s.project}` : ''}</small></>}
-              {s.role === 'speaker' && <><br /><small>Evaluator: {s.evaluator?.name || 'To be assigned'}</small></>}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <>
+      {sent && (
+        <div className="banner ok">
+          Request sent. The VP Education will confirm it in the app.
+          {vpe && <> <a href={whatsappLink(`Hi, I've asked for ${sent} on ${fmtDate(meeting.date)} in the Vision TM app.`, vpe.phone)} target="_blank" rel="noreferrer">Let them know on WhatsApp</a></>}
+        </div>
+      )}
+      <div className="card">
+        {canAsk && <p className="muted" style={{ marginTop: 0 }}>Want a role? Tap "Ask for this role" on any open slot.</p>}
+        <ul className="list">
+          {(meeting.slots || []).map((s) => (
+            <li key={s.key} style={{ alignItems: 'flex-start' }}>
+              <small style={{ width: 44, flex: 'none' }}>{s.time}</small>
+              <span className="grow">
+                <b>{ROLE_LABEL[s.role] || s.role}</b>{s.duration ? <small> ({s.duration} min)</small> : null}<br />
+                {s.person?.name || <span className="muted">To be assigned</span>}
+                {canAsk && !s.person?.name && <><br /><Ask slot={s} part="person" label="Ask for this role" /></>}
+                {s.title && <><br /><small>“{s.title}”{s.project ? ` · ${s.project}` : ''}</small></>}
+                {s.role === 'speaker' && <><br /><small>Evaluator: {s.evaluator?.name || 'To be assigned'}</small></>}
+                {canAsk && s.role === 'speaker' && s.person?.name && !s.evaluator?.name && s.person.id !== memberId && <><br /><Ask slot={s} part="evaluator" label="Ask to evaluate" /></>}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {asking && me && (
+        <Modal title={asking.part === 'evaluator' ? `Evaluate ${asking.slot.person?.name}` : `Ask for ${ROLE_LABEL[asking.slot.role]}`} onClose={() => setAsking(null)}>
+          <form onSubmit={async (e) => {
+            e.preventDefault()
+            const note = new FormData(e.target).get('note') || ''
+            await requestRole(meeting, asking.slot, asking.part, me, note)
+            setSent(asking.part === 'evaluator' ? `to evaluate ${asking.slot.person?.name}` : ROLE_LABEL[asking.slot.role])
+            setAsking(null)
+          }}>
+            <p className="muted">{fmtDate(meeting.date, { weekday: 'long', day: 'numeric', month: 'long' })}{meeting.number ? ` · Meeting #${meeting.number}` : ''}</p>
+            <div className="field"><label>{asking.slot.role === 'speaker' && asking.part === 'person' ? 'Speech title, path and project (optional)' : 'Note for the VP Education (optional)'}
+              <textarea name="note" maxLength={300} /></label></div>
+            <button className="full primary">Send request</button>
+          </form>
+        </Modal>
+      )}
+    </>
   )
 }
 

@@ -20,6 +20,9 @@ import Settings from './pages/Settings'
 import More from './pages/More'
 import About from './pages/About'
 import Poster from './pages/Poster'
+import MembersImport from './pages/MembersImport'
+import Requests from './pages/Requests'
+import { useInbox, useInboxAlerts } from './inbox'
 
 // Pages that pull in Gemini or the Excel writer load on demand.
 const AgendaImport = lazy(() => import('./pages/AgendaImport'))
@@ -63,6 +66,7 @@ function Shell() {
         <Route path="/meetings/import" element={officer(<AgendaImport />)} />
         <Route path="/meetings/:id" element={<PerRecord page={MeetingDetail} />} />
         <Route path="/members" element={member(<Members />)} />
+        <Route path="/members/import" element={officer(<MembersImport />)} />
         <Route path="/members/:id" element={member(<PerRecord page={MemberDetail} />)} />
         <Route path="/guests" element={officer(<Guests />)} />
         <Route path="/guests/:id" element={<PerRecord page={GuestDetail} />} />
@@ -71,6 +75,7 @@ function Shell() {
         <Route path="/dcp" element={member(<Dcp />)} />
         <Route path="/admin" element={officer(<Admin />)} />
         <Route path="/poster" element={officer(<Poster />)} />
+        <Route path="/requests" element={officer(<Requests />)} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/more" element={<More />} />
         <Route path="/about" element={<About />} />
@@ -90,6 +95,8 @@ function PerRecord({ page: Page }) {
 
 function Frame({ children, nav = false }) {
   const { user, isMember, isAdmin } = useAuth()
+  const inbox = useInbox(nav && isAdmin)
+  useInboxAlerts(inbox)
   return (
     <>
       <header className="topbar">
@@ -106,7 +113,9 @@ function Frame({ children, nav = false }) {
           {isAdmin && <NavLink to="/guests"><Icon name="people" />Guests</NavLink>}
           {isMember && !isAdmin && <NavLink to="/members"><Icon name="people" />Members</NavLink>}
           {isMember && <NavLink to="/log"><Icon name="mic" />Log</NavLink>}
-          <NavLink to="/more"><Icon name="more" />More</NavLink>
+          <NavLink to="/more" aria-label={inbox.count ? `More, ${inbox.count} waiting` : 'More'}>
+            <span className="navicon"><Icon name="more" />{inbox.count > 0 && <span className="badge">{inbox.count}</span>}</span>More
+          </NavLink>
         </nav>
       )}
     </>

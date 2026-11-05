@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth'
-import { useList, useMembers, useGuests, useMeetings, col, programYear, programYearRange, today, fmtDate, byName } from '../data'
+import { useList, useMembers, useGuests, useMeetings, col, ref, updateDoc, programYear, programYearRange, today, fmtDate, byName } from '../data'
 import { ROLES, ROLE_LABEL, AWARD_LABEL } from '../constants'
 import { exportXlsx, exportCsv } from '../export'
 import { Loading, ErrorNote, Tabs } from '../components/ui'
@@ -12,7 +12,8 @@ function yearOptions(meetings) {
 }
 
 export default function Reports() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, user } = useAuth()
+  const [params] = useSearchParams()
   const { data: members, loading } = useMembers()
   const { data: meetings } = useMeetings()
   const { data: guests } = useGuests(isAdmin)
@@ -63,6 +64,8 @@ export default function Reports() {
         sheets.push({ sheet: 'Guests', rows: guests.map((g) => ({ Name: g.name, Phone: g.phone || '', Email: g.email || '', Source: g.source || '', 'Invited by': g.invitedBy || '', Visits: g.visits || 0, 'First visit': g.firstVisit || '', 'Last visit': g.lastVisit || '', Status: g.status || 'New', Notes: g.notes || '' })) })
       }
       await exportXlsx(`vision-tm-${py}.xlsx`, sheets)
+      // Remembered for the monthly backup reminder on the President's home screen.
+      updateDoc(ref('users', user.uid), { lastBackup: today() }).catch(() => {})
     } catch (e) { setError(e) }
     setBusy(false)
   }
@@ -83,6 +86,7 @@ export default function Reports() {
         </select>
       </div>
       <ErrorNote error={error} />
+      {params.get('backup') === '1' && <div className="banner info">Monthly backup: tap <b>Download Excel (all data)</b> below and save the file to Google Drive or email it to yourself.</div>}
       <div className="stats">
         <div className="stat"><b>{yMeetings.length}</b><span>Meetings held</span></div>
         <div className="stat"><b>{yMeetings.length ? Math.round(att.filter((a) => a.personType === 'member' && inYear(a)).length / yMeetings.length) : 0}</b><span>Avg members / meeting</span></div>

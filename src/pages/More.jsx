@@ -1,17 +1,21 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { useInbox } from '../inbox'
 import { useClub } from '../components/ui'
 
 export default function More() {
   const { isAdmin, isMember, memberId, guestId } = useAuth()
   const club = useClub()
+  const { count } = useInbox(isAdmin)
   const links = [
+    isAdmin && ['/requests', `🔔 Requests${count ? ` (${count} waiting)` : ''}`],
     memberId && [`/members/${memberId}`, '👤 My profile, Pathways and speeches'],
     guestId && [`/guests/${guestId}`, '👤 My visits'],
     isMember && ['/members', '👥 Members'],
     isAdmin && ['/guests', '🙋 Guests and follow-up'],
     ['/meetings', '📅 Meetings'],
     isAdmin && ['/meetings/import', '📄 Import agenda (PDF or photo)'],
+    isAdmin && ['/members/import', '📥 Import member roster'],
     isAdmin && ['/poster', '🖨️ Check-in poster (permanent QR)'],
     isMember && ['/log', '🎙️ Voice log'],
     isMember && ['/reports', '📊 Reports and Excel export'],

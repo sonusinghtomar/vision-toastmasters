@@ -4,7 +4,8 @@ import { reload } from 'firebase/auth'
 import { useAuth, resendVerification } from '../auth'
 import { useMeetings, useList, useGuests, col, query, where, today, fmtDate, programYear, programYearRange, useDoc } from '../data'
 import { ROLE_LABEL } from '../constants'
-import { enableNotifications, remindUpcoming } from '../notify'
+import { enableNotifications, remindUpcoming, whatsappLink } from '../notify'
+import { useInbox } from '../inbox'
 import { meetsText } from '../schedule'
 import { Loading, useClub } from '../components/ui'
 
@@ -17,7 +18,9 @@ export default function Home() {
 
 function Pending() {
   const { user, profile } = useAuth()
+  const club = useClub()
   const [sent, setSent] = useState(false)
+  const approver = club.approvalsPhone || club.rsvpPhone
   return (
     <div className="card stack">
       <h1>Welcome, {profile?.name}</h1>
@@ -35,6 +38,12 @@ function Pending() {
         If you are a member, ask the President or VP Education to add your email ({user.email}) to your member profile,
         and you will be linked automatically. Guests are linked after their first check-in with the same email.
       </p>
+      {approver && (
+        <a className="btn primary" target="_blank" rel="noreferrer"
+          href={whatsappLink(`Hi, I have signed in to the Vision TM app as ${profile?.name || ''} (${user.email}). Please approve my access.`, approver)}>
+          Ask for access on WhatsApp
+        </a>
+      )}
     </div>
   )
 }
@@ -70,7 +79,7 @@ function NextMeetingCard({ next, club, admin }) {
 }
 
 function MemberHome() {
-  const { isAdmin, memberId, profile } = useAuth()
+  const { isAdmin, isSuper, memberId, profile } = useAuth()
   const club = useClub()
   const { next, upcoming, loading } = useNextMeeting()
   const py = programYear()
@@ -137,6 +146,9 @@ function MemberHome() {
         </>
       )}
 
+      {isAdmin && <Attention />}
+      {isSuper && <BackupReminder />}
+      {memberId && <MyRequests />}
       {isAdmin && (
         <>
           <div className="card">
@@ -190,5 +202,54 @@ function GuestHome() {
         {club.meetupUrl && <a className="btn" href={club.meetupUrl} target="_blank" rel="noreferrer">Meetup page</a>}
       </div>
     </>
+  )
+}
+
+// Officers: anything waiting for approval.
+function Attention() {
+  const { pendingUsers, roleRequests, count } = useInbox(true)
+  if (!count) return null
+  return (
+    <Link to="/requests" className="card accent" style={{ display: 'block', color: 'inherit' }}>
+      <h2>🔔 Needs your approval</h2>
+      {roleRequests.length > 0 && <p style={{ margin: 0 }}><b>{roleRequests.length}</b> role request{roleRequests.length === 1 ? '' : 's'}: {roleRequests.slice(0, 3).map((r) => `${r.name} (${r.roleLabel})`).join(', ')}{roleRequests.length > 3 ? '…' : ''}</p>}
+      {pendingUsers.length > 0 && <p style={{ margin: 0 }}><b>{pendingUsers.length}</b> {pendingUsers.length === 1 ? 'person' : 'people'} waiting for access</p>}
+      <p className="muted" style={{ margin: '.3rem 0 0' }}>Tap to review →</p>
+    </Link>
+  )
+}
+
+// Members: the answer to their role requests.
+function MyRequests() {
+  const { memberId } = useAuth()
+  const { data } = useList(() => query(col('roleRequests'), where('memberId', '==', memberId)), [memberId])
+  const t = today()
+  const list = data.filter((r) => r.date >= t).sort((a, b) => a.date.localeCompare(b.date))
+  if (!list.length) return null
+  const chip = { pending: ['Waiting', 'yellow'], approved: ['Approved', 'green'], declined: ['Not this time', 'gray'] }
+  return (
+    <div className="card">
+      <h2>My role requests</h2>
+      <ul className="list">{list.map((r) => (
+        <li key={r.id}><Link className="item" to={`/meetings/${r.meetingId}`}>
+          <span className="grow"><b>{r.roleLabel}</b><br /><small>{fmtDate(r.date)}{r.reason ? ` · ${r.reason}` : ''}</small></span>
+          <span className={`chip ${chip[r.status][1]}`}>{chip[r.status][0]}</span>
+        </Link></li>))}</ul>
+    </div>
+  )
+}
+
+// President: a monthly nudge to download the Excel backup.
+function BackupReminder() {
+  const { profile } = useAuth()
+  const last = profile?.lastBackup
+  const due = !last || (Date.now() - new Date(last + 'T00:00:00').getTime()) / 86400000 >= 30
+  if (!due) return null
+  return (
+    <div className="card">
+      <h2>💾 Monthly backup</h2>
+      <p>{last ? `Last backup: ${fmtDate(last)}.` : 'No backup downloaded yet.'} Download the Excel file and keep it in Google Drive or email.</p>
+      <Link className="btn" to="/reports?backup=1">Download backup</Link>
+    </div>
   )
 }

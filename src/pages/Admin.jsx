@@ -32,6 +32,7 @@ export default function Admin() {
     <>
       <h1>Users &amp; access</h1>
       <ErrorNote error={error || err} />
+      {isSuper && <ExcomAdmin users={users} members={members} onError={setErr} />}
       <div className="banner info">
         People appear here after their first sign-in. Link each person to their member or guest record.
         {isSuper ? ' As President you can also make officers admins.' : ' Only the President can grant officer (admin) rights.'}
@@ -71,5 +72,30 @@ export default function Admin() {
         })}</ul>
       </div>
     </>
+  )
+}
+
+// One tap: everyone linked to a member with an officer title becomes Admin.
+function ExcomAdmin({ users, members, onError }) {
+  const [done, setDone] = useState(0)
+  const officers = members.filter((m) => m.officerTitle && m.status !== 'inactive')
+  const linked = officers.map((m) => ({ m, u: users.find((u) => u.memberId === m.id) }))
+  const toPromote = linked.filter(({ u }) => u && ['member', 'pending'].includes(u.role))
+  const notSignedIn = linked.filter(({ u }) => !u)
+  if (!officers.length) return null
+  const promote = async () => {
+    for (const { u } of toPromote) await updateDoc(ref('users', u.id), { role: 'admin' }).catch(onError)
+    setDone(toPromote.length)
+  }
+  return (
+    <div className="card">
+      <h2>ExCom access</h2>
+      {done > 0 && <div className="banner ok">{done} officer{done === 1 ? '' : 's'} can now manage meetings, attendance and guests.</div>}
+      {toPromote.length > 0
+        ? <><p>{toPromote.map(({ m }) => `${m.name} (${m.officerTitle})`).join(', ')}</p>
+            <button className="primary" onClick={promote}>Make {toPromote.length} ExCom officer{toPromote.length === 1 ? '' : 's'} Admin</button></>
+        : <p className="muted" style={{ margin: 0 }}>All signed-in ExCom officers already have Admin access.</p>}
+      {notSignedIn.length > 0 && <p className="muted" style={{ marginBottom: 0 }}>Not signed in yet: {notSignedIn.map(({ m }) => `${m.name} (${m.officerTitle})`).join(', ')}.</p>}
+    </div>
   )
 }

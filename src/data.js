@@ -5,6 +5,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { ROLE_LABEL } from './constants'
+import { normEmail, cleanName } from './names'
 
 export const col = (name) => collection(db, name)
 export const ref = (name, id) => doc(db, name, id)
@@ -81,9 +82,7 @@ export function programYearRange(py) {
 }
 
 // ── Names ──────────────────────────────────────────────────
-export const normEmail = (e) => (e || '').trim().toLowerCase()
-const TITLE_RE = /^(tm|dtm|ptm|ctm|acs|acb|acg|als|alb|cl|mr|mrs|ms|dr)\.?\s+/i
-export const cleanName = (n) => (n || '').replace(TITLE_RE, '').replace(TITLE_RE, '').replace(/\s+/g, ' ').trim()
+export { normEmail, cleanName }
 const norm = (n) => cleanName(n).toLowerCase().replace(/[^a-z ]/g, '')
 
 // Match a name from an agenda or a voice note to the closest member/guest.
@@ -243,4 +242,41 @@ export async function markAttendanceSelf(meeting, memberId, name, code) {
     meetingId: meeting.id, date: meeting.date || '', meetingNo: meeting.number || null,
     personType: 'member', personId: memberId, name: name || '', method: 'qr', code, at: serverTimestamp(),
   })
+}
+
+// ── Role requests ──────────────────────────────────────────
+// A member asks for an open role (part 'person') or to evaluate a speaker (part 'evaluator').
+export async function requestRole(meeting, slot, part, member, note = '') {
+  await addDoc(col('roleRequests'), {
+    meetingId: meeting.id, meetingNo: meeting.number || null, date: meeting.date || '',
+    slotKey: slot.key, part, role: part === 'evaluator' ? 'evaluator' : slot.role,
+    roleLabel: part === 'evaluator' ? `Evaluator for ${slot.person?.name || 'a speaker'}` : (ROLE_LABEL[slot.role] || slot.role),
+    memberId: member.id, name: member.name, note: note.trim().slice(0, 300), status: 'pending', createdAt: serverTimestamp(),
+  })
+}
+
+export async function decideRequest(req, approve, decidedBy) {
+  if (approve) {
+    const snap = await getDoc(ref('meetings', req.meetingId))
+    if (!snap.exists()) throw new Error('That meeting no longer exists.')
+    const meeting = { id: snap.id, ...snap.data() }
+    const person = { type: 'member', id: req.memberId, name: req.name }
+    let found = false
+    meeting.slots = (meeting.slots || []).map((s) => {
+      if (s.key !== req.slotKey) return s
+      found = true
+      return req.part === 'evaluator' ? { ...s, evaluator: person } : { ...s, person }
+    })
+    if (!found) throw new Error('That role is no longer on the agenda.')
+    await saveMeeting(meeting)
+    // Anyone else waiting for the same role is told it has gone.
+    const others = await getDocs(query(col('roleRequests'), where('meetingId', '==', req.meetingId)))
+    for (const d of others.docs) {
+      const o = d.data()
+      if (d.id !== req.id && o.status === 'pending' && o.slotKey === req.slotKey && o.part === req.part) {
+        await updateDoc(d.ref, { status: 'declined', reason: 'Role given to someone else', decidedBy, decidedAt: serverTimestamp() })
+      }
+    }
+  }
+  await updateDoc(ref('roleRequests', req.id), { status: approve ? 'approved' : 'declined', decidedBy, decidedAt: serverTimestamp() })
 }

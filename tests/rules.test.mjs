@@ -115,6 +115,20 @@ await env.withSecurityRulesDisabled((c) => updateDoc(doc(c.firestore(), 'checkin
 await t('poster: switched off → rejected', assertFails(ci(anon, 'now', 'club1', 'anon')))
 await t('per-meeting QR still works', assertSucceeds(ci(anon, 'mt', 'abc', 'anon')))
 
+// role requests
+const rq = (c, memberId, extra = {}) => addDoc(collection(c, 'roleRequests'), { meetingId: 'mt', slotKey: 'tmod_1', part: 'person', role: 'tmod', roleLabel: 'TMOD', memberId, name: 'M', note: '', status: 'pending', createdAt: new Date(), ...extra })
+await t('member requests a role for self', assertSucceeds(rq(mem, 'm1')))
+await t('member cannot request for someone else', assertFails(rq(mem, 'm2')))
+await t('member cannot create an approved request', assertFails(rq(mem, 'm1', { status: 'approved' })))
+await t('guest cannot request a role', assertFails(rq(gst, 'g1')))
+await env.withSecurityRulesDisabled(async (c) => { await setDoc(doc(c.firestore(), 'roleRequests/r1'), { memberId: 'm1', status: 'pending' }); await setDoc(doc(c.firestore(), 'roleRequests/r2'), { memberId: 'm2', status: 'pending' }) })
+await t('member lists own requests', assertSucceeds(getDocs(query(collection(mem, 'roleRequests'), where('memberId', '==', 'm1')))))
+await t("member cannot read others' requests", assertFails(getDoc(doc(mem, 'roleRequests/r2'))))
+await t('member cannot approve own request', assertFails(updateDoc(doc(mem, 'roleRequests/r1'), { status: 'approved' })))
+await t('officer approves a request', assertSucceeds(updateDoc(doc(off, 'roleRequests/r2'), { status: 'approved' })))
+await t('member cancels own pending request', assertSucceeds(deleteDoc(doc(mem, 'roleRequests/r1'))))
+await t('member records own last backup date', assertSucceeds(updateDoc(doc(mem, 'users/mem'), { lastBackup: '2026-11-05' })))
+
 console.log(`\n${pass} passed, ${fail} failed`)
 await env.cleanup()
 process.exit(fail ? 1 : 0)

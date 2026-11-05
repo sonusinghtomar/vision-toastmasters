@@ -18,7 +18,7 @@ export default function Settings() {
   const fields = [
     ['name', 'Club name'], ['number', 'Club number'], ['area', 'Area'], ['division', 'Division'], ['district', 'District'],
     ['venue', 'Venue'], ['meetingDay', 'Meeting day'], ['meetingWeeks', 'Weeks of the month (e.g. 1,3,5; blank = every week)'], ['startTime', 'Start time'], ['endTime', 'End time'],
-    ['meetupUrl', 'Meetup link'], ['rsvpName', 'RSVP contact name'], ['rsvpPhone', 'RSVP phone'],
+    ['meetupUrl', 'Meetup link'], ['rsvpName', 'RSVP contact name'], ['rsvpPhone', 'RSVP phone'], ['approvalsPhone', 'WhatsApp number for access requests (yours)'],
   ]
   return (
     <>

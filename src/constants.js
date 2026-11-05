@@ -13,6 +13,7 @@ export const CLUB_DEFAULTS = {
   meetupUrl: 'https://www.meetup.com/visiontm',
   rsvpName: '',
   rsvpPhone: '',
+  approvalsPhone: '', // WhatsApp number new users message to ask for access
 }
 
 // Meeting roles, in agenda order. `kind` drives the "Best Role Player" awards.
