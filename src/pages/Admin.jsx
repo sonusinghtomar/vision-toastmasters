@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '../auth'
-import { useList, useMembers, useGuests, col, ref, updateDoc, byName } from '../data'
+import { addDoc } from 'firebase/firestore'
+import { useList, useMembers, useGuests, col, ref, updateDoc, byName, normEmail, today, serverTimestamp } from '../data'
+import { OFFICER_TITLES } from '../constants'
 import { Loading, ErrorNote, Avatar } from '../components/ui'
 
 const ROLE_INFO = {
@@ -22,6 +24,27 @@ export default function Admin() {
 
   const roles = isSuper ? ['superadmin', 'admin', 'member', 'guest', 'pending'] : ['member', 'guest', 'pending']
   const save = (u, patch) => updateDoc(ref('users', u.id), patch).catch(setErr)
+  // Linking a waiting person to a member record also lets them in as a member.
+  const linkMember = async (u, value) => {
+    try {
+      let memberId = value
+      if (value === '__new') {
+        const r = await addDoc(col('members'), {
+          name: u.name || '', email: normEmail(u.email), phone: '', status: 'active', joinDate: today(),
+          officerTitle: '', pathways: [], createdAt: serverTimestamp(),
+        })
+        memberId = r.id
+      }
+      await updateDoc(ref('users', u.id), { memberId, ...(memberId && u.role === 'pending' ? { role: 'member' } : {}) })
+    } catch (e) { setErr(e) }
+  }
+  // An ExCom title lives on the member record; giving one also grants Admin.
+  const setTitle = async (u, title) => {
+    try {
+      await updateDoc(ref('members', u.memberId), { officerTitle: title })
+      if (title && ['member', 'pending'].includes(u.role)) await updateDoc(ref('users', u.id), { role: 'admin' })
+    } catch (e) { setErr(e) }
+  }
   const order = ['pending', 'superadmin', 'admin', 'member', 'guest']
   const list = users
     .filter((u) => `${u.name} ${u.email}`.toLowerCase().includes(q.toLowerCase()))
@@ -34,7 +57,7 @@ export default function Admin() {
       <ErrorNote error={error || err} />
       {isSuper && <ExcomAdmin users={users} members={members} onError={setErr} />}
       <div className="banner info">
-        People appear here after their first sign-in. Link each person to their member or guest record.
+        People appear here after their first sign-in. <b>Link member record</b> connects their login to their entry on the club roster, so they see their own profile, roles and stats (people whose email is on the roster are linked automatically).
         {isSuper ? ' As President you can also make officers admins.' : ' Only the President can grant officer (admin) rights.'}
       </div>
       <input placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} style={{ marginBottom: '1rem' }} />
@@ -60,12 +83,23 @@ export default function Admin() {
                     {[...guests].sort(byName).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
                   </select>
                 ) : (
-                  <select value={u.memberId || ''} disabled={locked && !isSuper} onChange={(e) => save(u, { memberId: e.target.value })} aria-label="Member record">
+                  <select value={u.memberId || ''} disabled={locked && !isSuper} onChange={(e) => linkMember(u, e.target.value)} aria-label="Member record">
                     <option value="">Link member record…</option>
+                    <option value="__new">＋ Create member profile for {u.name || u.email}</option>
                     {[...members].sort(byName).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                   </select>
                 )}
               </div>
+              {isSuper && u.role !== 'guest' && u.memberId && (
+                <div className="row" style={{ marginTop: '.4rem', flexWrap: 'nowrap' }}>
+                  <small className="muted" style={{ whiteSpace: 'nowrap' }}>ExCom title</small>
+                  <select value={members.find((m) => m.id === u.memberId)?.officerTitle || ''} aria-label="ExCom title"
+                    onChange={(e) => setTitle(u, e.target.value)}>
+                    <option value="">None</option>
+                    {OFFICER_TITLES.map((t) => <option key={t}>{t}</option>)}
+                  </select>
+                </div>
+              )}
               <small className="muted">{ROLE_INFO[u.role]}</small>
             </li>
           )
