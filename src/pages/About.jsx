@@ -22,7 +22,8 @@ const FEATURES = [
 const GUIDES = {
   officers: [
     ['Requests and approvals', [
-      'A badge on More and a "Needs your approval" card on Home show role requests from members and people waiting for access. With notifications allowed, your phone also alerts you while the app is open.',
+      'Meeting roles are allocated by the VP Education, with the President as backup. Only they see and decide members\' role requests.',
+      'A badge on More and a "Needs your approval" card on Home show what is waiting: role requests (VP Education and President) and people waiting for access (all ExCom Admins). With notifications allowed, your phone also alerts you while the app is open.',
       'More → 🔔 Requests: Approve puts the member on the agenda (anyone else who asked for that role is told it has gone); Decline lets them know.',
     ]],
     ['Plan the season (once)', [

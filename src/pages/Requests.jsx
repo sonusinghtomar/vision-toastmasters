@@ -8,7 +8,7 @@ import { Loading, ErrorNote, Avatar } from '../components/ui'
 // Everything waiting for an officer: role requests and people waiting for access.
 export default function Requests() {
   const { profile } = useAuth()
-  const { pendingUsers, roleRequests, loading } = useInbox(true)
+  const { pendingUsers, roleRequests, approver, loading } = useInbox(true)
   const { data: meetings } = useMeetings()
   const [busy, setBusy] = useState('')
   const [error, setError] = useState(null)
@@ -28,7 +28,8 @@ export default function Requests() {
     <>
       <h1>Requests</h1>
       <ErrorNote error={error} />
-      <div className="card">
+      {!approver && <div className="banner info">Meeting role requests go to the VP Education, with the President as backup.</div>}
+      {approver && <div className="card">
         <h2>Role requests ({roleRequests.length})</h2>
         {roleRequests.length === 0 ? <p className="muted">No role requests waiting.</p> : (
           <ul className="list">{roleRequests.map((r) => {
@@ -50,7 +51,7 @@ export default function Requests() {
             )
           })}</ul>
         )}
-      </div>
+      </div>}
       <div className="card">
         <h2>Waiting for access ({pendingUsers.length})</h2>
         {pendingUsers.length === 0 ? <p className="muted">Nobody is waiting.</p> : (

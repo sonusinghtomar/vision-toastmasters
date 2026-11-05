@@ -63,7 +63,8 @@ function AgendaView({ meeting, members }) {
   const canAsk = isMember && memberId && meeting.date >= today()
   const me = members.find((m) => m.id === memberId)
   const reqFor = (slot, part) => mine.find((r) => r.meetingId === meeting.id && r.slotKey === slot.key && r.part === part && r.status === 'pending')
-  const vpe = members.find((m) => m.officerTitle === 'VP Education' && m.phone)
+  const club = useClub()
+  const vpePhone = members.find((m) => m.officerTitle === 'VP Education' && m.phone)?.phone || club.approvalsPhone
 
   const Ask = ({ slot, part, label }) => {
     const r = reqFor(slot, part)
@@ -75,7 +76,7 @@ function AgendaView({ meeting, members }) {
       {sent && (
         <div className="banner ok">
           Request sent. The VP Education will confirm it in the app.
-          {vpe && <> <a href={whatsappLink(`Hi, I've asked for ${sent} on ${fmtDate(meeting.date)} in the Vision TM app.`, vpe.phone)} target="_blank" rel="noreferrer">Let them know on WhatsApp</a></>}
+          {vpePhone && <> <a href={whatsappLink(`Hi, I've asked for ${sent} on ${fmtDate(meeting.date)} in the Vision TM app.`, vpePhone)} target="_blank" rel="noreferrer">Let them know on WhatsApp</a></>}
         </div>
       )}
       <div className="card">

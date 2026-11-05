@@ -20,6 +20,11 @@ service cloud.firestore {
     function isMember() { return role() in ['member', 'admin', 'superadmin']; }
     function myMemberId() { return hasProfile() ? me().get('memberId', '') : ''; }
     function myGuestId() { return hasProfile() ? me().get('guestId', '') : ''; }
+    // Meeting roles are allocated by the VP Education; the President is the backup.
+    function isRoleApprover() {
+      return isSuper() || (isAdmin() && myMemberId() != ''
+        && get(/databases/$(database)/documents/members/$(myMemberId())).data.get('officerTitle', '') == 'VP Education');
+    }
     function verifiedEmail() {
       return signedIn() && request.auth.token.get('email', '') != ''
         && request.auth.token.get('email_verified', false) == true;
@@ -139,17 +144,17 @@ service cloud.firestore {
       allow delete: if isAdmin() || (isMember() && resource.data.personId == myMemberId());
     }
 
-    // Members ask for an open meeting role; officers approve or decline.
+    // Members ask for an open meeting role; the VP Education (or the President) decides.
     match /roleRequests/{id} {
-      allow read: if isAdmin() || (isMember() && resource.data.memberId == myMemberId());
+      allow read: if isRoleApprover() || (isMember() && resource.data.memberId == myMemberId());
       allow create: if isMember() && myMemberId() != ''
         && request.resource.data.memberId == myMemberId()
         && request.resource.data.status == 'pending'
         && request.resource.data.keys().hasOnly(['meetingId', 'meetingNo', 'date', 'slotKey', 'part', 'role',
              'roleLabel', 'memberId', 'name', 'note', 'status', 'createdAt'])
         && request.resource.data.note is string && request.resource.data.note.size() <= 300;
-      allow update: if isAdmin();
-      allow delete: if isAdmin()
+      allow update: if isRoleApprover();
+      allow delete: if isRoleApprover()
         || (isMember() && resource.data.memberId == myMemberId() && resource.data.status == 'pending');
     }
 
